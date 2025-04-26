@@ -1,0 +1,12 @@
+/* src/components/NewComponent/NewComponent.css */
+.new-component {
+  max-width: 800px;
+  padding: 2rem;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: bold;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}

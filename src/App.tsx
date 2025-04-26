@@ -6,6 +6,7 @@ import PostForm from './components/PostForm/PostForm';
 import Login from './components/Login/Login';
 import { Post } from './types/Post';
 import './App.css';
+import NewComponent from './components/Default/NewComponent';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -92,6 +93,10 @@ const App: React.FC = () => {
     }
   };
 
+  const handleOnClick = () => {
+    console.log('NewComponent clicked');
+  };
+
   return (
     <div className="app">
       <Header isLoggedIn={isLoggedIn} onLogout={handleLogout} />
@@ -126,6 +131,7 @@ const App: React.FC = () => {
             <PostList posts={posts} onPostClick={handlePostClick} />
           </div>
         )}
+        <NewComponent title="New Post" onClick={handleOnClick}/>
       </main>
     </div>
   );
