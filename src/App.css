@@ -1,12 +1,59 @@
-.App {
-  text-align: center;
+/* Root element settings */
+html {
+  font-size: 14px;
+}
+
+/* App styles */
+.app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-main {
+.app-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.main-content {
   flex: 1;
   padding: 2rem;
   background-color: #f5f5f5;
+}
+
+.post-list-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.post-list-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 2rem;
+
+}
+
+.post-list-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.create-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.create-button:hover {
+  background-color: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
