@@ -1,0 +1,41 @@
+.comment {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.comment-header {
+  margin-bottom: 1rem;
+}
+
+.comment-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.comment-meta {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.comment-meta span {
+  margin: 0 0.5rem;
+}
+
+.comment-author {
+  font-weight: 500;
+}
+
+.comment-date {
+  color: #888;
+}
+
+.comment-content {
+  color: #444;
+  line-height: 1.6;
+  font-size: 1rem;
+} 

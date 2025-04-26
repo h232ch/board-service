@@ -5,11 +5,12 @@ import PostDetail from './components/PostDetail/PostDetail';
 import PostForm from './components/PostForm/PostForm';
 import Login from './components/Login/Login';
 import { Post } from './types/Post';
+import { Comment } from './types/Comment';
 import './App.css';
-import NewComponent from './components/Default/NewComponent';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -29,14 +30,16 @@ const App: React.FC = () => {
       createdAt: '2024-03-21',
     },
   ]);
+  const [comments, setComments] = useState<{ [postId: number]: Comment[] }>({});
 
-  const handleLogin = (username: string, password: string) => {
-    console.log('Login attempt with:', username, password);
+  const handleLogin = () => {
     setIsLoggedIn(true);
+    setUsername('Current User');
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    setUsername('');
     setSelectedPost(null);
     setIsEditing(false);
     setIsCreating(false);
@@ -63,13 +66,16 @@ const App: React.FC = () => {
     setIsEditing(false);
   };
 
-  const handleEditPost = () => {
-    setIsEditing(true);
+  const handleEditPost = (updatedPost: Post) => {
+    setPosts(posts.map(post => post.id === updatedPost.id ? updatedPost : post));
+    if (selectedPost?.id === updatedPost.id) {
+      setSelectedPost(updatedPost);
+    }
   };
 
-  const handleDeletePost = () => {
-    if (selectedPost) {
-      setPosts(posts.filter(p => p.id !== selectedPost.id));
+  const handleDeletePost = (postId: number) => {
+    setPosts(posts.filter(post => post.id !== postId));
+    if (selectedPost?.id === postId) {
       setSelectedPost(null);
     }
   };
@@ -93,13 +99,19 @@ const App: React.FC = () => {
     }
   };
 
-  const handleOnClick = () => {
-    console.log('NewComponent clicked');
+  const handleAddComment = (postId: number, comment: Comment) => {
+    setComments(prev => ({
+      ...prev,
+      [postId]: [...(prev[postId] || []), comment]
+    }));
   };
 
   return (
     <div className="app">
-      <Header isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+      <Header 
+        isLoggedIn={isLoggedIn} 
+        onLogout={handleLogout} 
+      />
       <main className="main-content">
         {!isLoggedIn ? (
           <Login onLogin={handleLogin} />
@@ -120,6 +132,8 @@ const App: React.FC = () => {
             onEdit={handleEditPost}
             onDelete={handleDeletePost}
             onBack={handleBackToList}
+            comments={comments[selectedPost.id] || []}
+            onAddComment={handleAddComment}
           />
         ) : (
           <div className="post-list-container">
@@ -131,7 +145,6 @@ const App: React.FC = () => {
             <PostList posts={posts} onPostClick={handlePostClick} />
           </div>
         )}
-        <NewComponent title="New Post" onClick={handleOnClick}/>
       </main>
     </div>
   );

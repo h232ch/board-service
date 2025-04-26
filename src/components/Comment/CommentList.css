@@ -1,0 +1,10 @@
+.comment-list {
+  margin-top: 2rem;
+}
+
+.no-comments {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  margin: 2rem 0;
+} 
