@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from './components/Header/Header';
 import PostList from './components/PostList/PostList';
 import PostDetail from './components/PostDetail/PostDetail';
@@ -9,6 +9,7 @@ import { Comment } from './types/Comment';
 import './App.css';
 
 const App: React.FC = () => {
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -31,10 +32,14 @@ const App: React.FC = () => {
     },
   ]);
   const [comments, setComments] = useState<{ [postId: number]: Comment[] }>({});
+  // useEffect를 사용하여 업데이트된 값을 출력
+  // useEffect(() => {
+  //   console.log("posts가 변경되었습니다!", posts);
+  // }, [posts]);
 
-  const handleLogin = () => {
+  const handleLogin = (username: string, password: string) => {
     setIsLoggedIn(true);
-    setUsername('Current User');
+    setUsername(username);
   };
 
   const handleLogout = () => {
@@ -70,6 +75,7 @@ const App: React.FC = () => {
     setPosts(posts.map(post => post.id === updatedPost.id ? updatedPost : post));
     if (selectedPost?.id === updatedPost.id) {
       setSelectedPost(updatedPost);
+      setIsEditing(true)
     }
   };
 
@@ -82,13 +88,19 @@ const App: React.FC = () => {
 
   const handleSubmitPost = (postData: Omit<Post, 'id'>) => {
     if (isEditing && selectedPost) {
+      const updatedPost = { ...selectedPost, ...postData };
+    
       setPosts(posts.map(p => 
         p.id === selectedPost.id 
-          ? { ...p, ...postData }
+          ? updatedPost
           : p
       ));
-      setSelectedPost(null);
+      // useState는 비동기로 동작하기 때문에 아래 코드에는 업데이트된 값이 반영되지 않음
+      console.log(posts)
+    
+      setSelectedPost(updatedPost);   // ✅ 여기 수정!
       setIsEditing(false);
+
     } else {
       const newPost: Post = {
         ...postData,
@@ -106,10 +118,22 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleDeleteComment = (postId: number, commentId: number) => {
+    setComments(prev => ({
+      ...prev,
+      [postId]: prev[postId].filter(comment => comment.id !== commentId)
+    }));
+  };
+
+  const handleOnClick = () => {
+
+  };
+
   return (
     <div className="app">
       <Header 
         isLoggedIn={isLoggedIn} 
+        username={username}
         onLogout={handleLogout} 
       />
       <main className="main-content">
@@ -118,28 +142,32 @@ const App: React.FC = () => {
         ) : isCreating ? (
           <PostForm
             onSubmit={handleSubmitPost}
+            username={username}
             onCancel={handleBackToList}
           />
         ) : isEditing && selectedPost ? (
           <PostForm
             initialData={selectedPost}
+            username={username}
             onSubmit={handleSubmitPost}
             onCancel={handleBackToList}
           />
         ) : selectedPost ? (
           <PostDetail
             post={selectedPost}
+            username={username}
             onEdit={handleEditPost}
             onDelete={handleDeletePost}
             onBack={handleBackToList}
             comments={comments[selectedPost.id] || []}
             onAddComment={handleAddComment}
+            onDeleteComment={handleDeleteComment}
           />
         ) : (
           <div className="post-list-container">
             <div className="post-list-header">
               <button onClick={handleCreatePost} className="create-button">
-                New Post
+                New
               </button>
             </div>
             <PostList posts={posts} onPostClick={handlePostClick} />

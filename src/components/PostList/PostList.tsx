@@ -8,18 +8,6 @@ interface PostListProps {
 }
 
 const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    }).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2');
-  };
 
   if (posts.length === 0) {
     return <p>No posts available.</p>;
@@ -37,7 +25,7 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
           <div className="post-meta">
             <span className="post-author">{post.author}</span>
             <span>•</span>
-            <span className="post-date">{formatDate(post.createdAt)}</span>
+            <span className="post-date">{new Date(post.createdAt).toLocaleString()}</span>
           </div>
         </div>
       ))}

@@ -4,9 +4,11 @@ import './Comment.css';
 
 interface CommentProps {
   comment: CommentType;
+  onDelete: (commentId: number) => void;
+  onEdit: (comment: CommentType) => void;
 }
 
-const Comment: React.FC<CommentProps> = ({ comment }) => {
+const Comment: React.FC<CommentProps> = ({ comment, onDelete, onEdit }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString('en-US', {
@@ -31,7 +33,10 @@ const Comment: React.FC<CommentProps> = ({ comment }) => {
       </div>
       <div className="comment-content">
         <p>{comment.content}</p>
+        <button className="comment-edit-button" onClick={() => onEdit(comment)}>Edit</button>
+        <button className="comment-delete-button" onClick={() => onDelete(comment.id)}>Delete</button>
       </div>
+      
     </div>
   );
 };

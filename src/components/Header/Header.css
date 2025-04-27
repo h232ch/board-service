@@ -25,6 +25,7 @@
   font-weight: bold;
 }
 
+
 .logout-button {
   padding: 0.75rem 1.5rem;
   background-color: #4CAF50;
@@ -49,3 +50,15 @@
   color: #ccc;
   font-size: 0.9rem;
 } 
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-info span {
+  margin-right: 1rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
