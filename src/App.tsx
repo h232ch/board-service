@@ -6,6 +6,7 @@ import PostForm from './components/PostForm/PostForm';
 import Login from './components/Login/Login';
 import { Post } from './types/Post';
 import { Comment } from './types/Comment';
+import { User } from './types/User';
 import './App.css';
 
 const App: React.FC = () => {
@@ -15,6 +16,7 @@ const App: React.FC = () => {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([
     {
       id: 1,
@@ -38,6 +40,14 @@ const App: React.FC = () => {
   // }, [posts]);
 
   const handleLogin = (username: string, password: string) => {
+    const now = new Date().toISOString();
+    const newUser: User = {
+      id: username,
+      loginDate: now,
+      signupDate: now // 처음 로그인할 때는 signupDate를 loginDate와 동일하게 설정
+    };
+    
+    setCurrentUser(newUser);
     setIsLoggedIn(true);
     setUsername(username);
   };
@@ -48,6 +58,7 @@ const App: React.FC = () => {
     setSelectedPost(null);
     setIsEditing(false);
     setIsCreating(false);
+    setCurrentUser(null);
   };
 
   const handlePostClick = (postId: number) => {
@@ -192,16 +203,32 @@ const App: React.FC = () => {
 
   };
 
+  const handleSignUp = (username: string, password: string) => {
+    // Create a new user with signup date
+    const now = new Date().toISOString();
+    const newUser: User = {
+      id: username,
+      loginDate: now,
+      signupDate: now
+    };
+    
+    // After signup, automatically log the user in
+    setCurrentUser(newUser);
+    setIsLoggedIn(true);
+    setUsername(username);
+  };
+
   return (
     <div className="app">
       <Header 
-        isLoggedIn={isLoggedIn} 
+        isLoggedIn={isLoggedIn}
         username={username}
-        onLogout={handleLogout} 
+        onLogout={handleLogout}
+        userInfo={currentUser}
       />
       <main className="main-content">
         {!isLoggedIn ? (
-          <Login onLogin={handleLogin} />
+          <Login onLogin={handleLogin} onSignUp={handleSignUp} />
         ) : isCreating ? (
           <PostForm
             onSubmit={handleSubmitPost}

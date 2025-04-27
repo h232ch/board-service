@@ -1,19 +1,19 @@
-.login-container {
+.signup-container {
   max-width: 400px;
-  margin: 100px auto;
+  margin: 2rem auto;
   padding: 2rem;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.login-title {
-  text-align: center;
-  margin-bottom: 2rem;
+.signup-container h2 {
+  margin: 0 0 2rem;
   color: #333;
+  text-align: center;
 }
 
-.login-form {
+.signup-form {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -26,8 +26,9 @@
 }
 
 .form-group label {
+  color: #555;
   font-size: 0.9rem;
-  color: #666;
+  font-weight: 500;
 }
 
 .form-group input {
@@ -43,44 +44,48 @@
   border-color: #4CAF50;
 }
 
-.login-button {
+.form-group input.error {
+  border-color: #f44336;
+}
+
+.error-message {
+  color: #f44336;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.signup-button,
+.cancel-button {
+  flex: 1;
   padding: 0.75rem;
-  background-color: #4CAF50;
-  color: white;
   border: none;
   border-radius: 4px;
   font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
-.login-button:hover {
+.signup-button {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.signup-button:hover {
   background-color: #45a049;
 }
 
-.signup-prompt {
-  text-align: center;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.signup-prompt span {
+.cancel-button {
+  background-color: #f5f5f5;
   color: #666;
-  margin-right: 0.5rem;
 }
 
-.signup-link {
-  background: none;
-  border: none;
-  color: #4CAF50;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 0;
-  font-size: 1rem;
-  text-decoration: underline;
-}
-
-.signup-link:hover {
-  color: #45a049;
-}
+.cancel-button:hover {
+  background-color: #e0e0e0;
+} 
