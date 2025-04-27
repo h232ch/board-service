@@ -1,45 +1,89 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Post } from '../../types/Post';
+import { Comment as CommentType } from '../../types/Comment';
+import CommentList from '../Comment/CommentList';
 import './PostDetail.css';
 
 interface PostDetailProps {
   post: Post;
-  onEdit: () => void;
-  onDelete: () => void;
+  username: string;
   onBack: () => void;
+  onEdit: (post: Post) => void;
+  onDelete: (postId: number) => void;
+  comments: CommentType[];
+  onAddComment: (postId: number, comment: CommentType) => void;
+  onDeleteComment: (postId: number, commentId: number) => void;
+  onEditComment: (postId: number, commentId: number, newContent: string) => void;
+  onAddReply: (postId: number, parentId: number, content: string) => void;
+  onEditReply: (postId: number, parentId: number, replyId: number, newContent: string) => void;
+  onDeleteReply: (postId: number, parentId: number, replyId: number) => void;
 }
 
-const PostDetail: React.FC<PostDetailProps> = ({ post, onEdit, onDelete, onBack }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    }).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2');
+const PostDetail: React.FC<PostDetailProps> = ({ post, username, onBack, onEdit, onDelete, comments, onAddComment, onDeleteComment, onEditComment, onAddReply, onEditReply, onDeleteReply }) => {
+  const [newComment, setNewComment] = useState({
+    content: '',
+  });
+
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.content.trim()) return;
+
+    const comment: CommentType = {
+      id: Date.now(),
+      author: username, // TODO: 실제 로그인한 사용자 정보 사용
+      content: newComment.content,
+      createdAt: new Date().toISOString(),
+    };
+
+    onAddComment(post.id, comment);
+    setNewComment({ content: '' });
   };
 
   return (
     <div className="post-detail">
-      <div className="post-title">
-        <h2>{post.title}</h2>
-        <div className="post-meta">
-          <span className="post-author">By {post.author}</span>
-          <span>•</span>
-          <span className="post-date">{formatDate(post.createdAt)}</span>
+      <div className="post-detail-header">
+        <h1 className="post-detail-title">{post.title}</h1>
+        <div className="post-detail-meta">
+          <span className="post-detail-author">Author: {post.author}</span>
+          <span className="post-detail-date">{new Date(post.createdAt).toLocaleString()}</span>
         </div>
       </div>
-      <div className="post-content">
+      <div className="post-detail-content">
         <p>{post.content}</p>
       </div>
       <div className="post-actions">
-        <button className="back-button" onClick={onBack}>Back</button>
-        <button className="edit-button" onClick={onEdit}>Edit</button>
-        <button className="delete-button" onClick={onDelete}>Delete</button>
+        {username === post.author && (
+          <>
+            <button onClick={() => onEdit(post)} className='edit-button'>Edit</button>
+            <button onClick={() => onDelete(post.id)} className='delete-button'>Delete</button>
+          </>
+        )}
+        <button onClick={onBack} className="back-button">Back</button>
+      </div>
+    
+      <div className="comment-section">
+        <h2>Comments</h2>
+        <form onSubmit={handleCommentSubmit} className="comment-form">
+          <div className="form-group">
+            <textarea
+              placeholder="Comment Contents"
+              value={newComment.content}
+              onChange={(e) => setNewComment({ content: e.target.value })}
+              className="comment-textarea"
+            />
+          </div>
+          <button type="submit" className="comment-submit">New Comment</button>
+        </form>
+        <CommentList 
+          comments={comments} 
+          postId={post.id}
+          onDeleteComment={onDeleteComment}
+          onEditComment={onEditComment}
+          onAddReply={onAddReply}
+          onEditReply={onEditReply}
+          onDeleteReply={onDeleteReply}
+          username={username}
+        />
       </div>
     </div>
   );

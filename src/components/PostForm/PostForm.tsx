@@ -4,20 +4,19 @@ import './PostForm.css';
 
 interface PostFormProps {
   initialData?: Post;
+  username: string;
   onSubmit: (postData: Omit<Post, 'id'>) => void;
   onCancel: () => void;
 }
 
-const PostForm: React.FC<PostFormProps> = ({ initialData, onSubmit, onCancel }) => {
+const PostForm: React.FC<PostFormProps> = ({ initialData, username, onSubmit, onCancel }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [author, setAuthor] = useState('');
 
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title);
       setContent(initialData.content);
-      setAuthor(initialData.author);
     }
   }, [initialData]);
 
@@ -26,8 +25,8 @@ const PostForm: React.FC<PostFormProps> = ({ initialData, onSubmit, onCancel }) 
     onSubmit({
       title,
       content,
-      author,
-      createdAt: new Date().toISOString().split('T')[0],
+      author: username,
+      createdAt: new Date().toISOString(),
     });
   };
 
@@ -59,9 +58,8 @@ const PostForm: React.FC<PostFormProps> = ({ initialData, onSubmit, onCancel }) 
           <input
             type="text"
             id="author"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            required
+            value={username}   // username 변수를 사용
+            readOnly           // 읽기 전용 설정
           />
         </div>
         <div className="form-actions">
