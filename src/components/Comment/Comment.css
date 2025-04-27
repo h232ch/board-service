@@ -1,8 +1,8 @@
 .comment {
-  border: 1px solid #e1e1e1;
-  border-radius: 4px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  border: none;
+  border-bottom: 1px solid #e1e1e1;
+  padding: 1rem 0;
+  margin-bottom: 1.2rem;
   background-color: #fff;
 }
 
@@ -101,7 +101,6 @@
   width: 100%;
   min-height: 80px;
   padding: 0.5rem;
-  margin-bottom: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   resize: vertical;
@@ -123,9 +122,8 @@
 
 .reply {
   margin-bottom: 1rem;
-  padding: 0.5rem;
+  padding: 0.5rem 0;
   background-color: #f8f9fa;
-  border-radius: 4px;
 }
 
 .reply-header {

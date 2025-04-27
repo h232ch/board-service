@@ -52,8 +52,12 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, username, onBack, onEdit,
         <p>{post.content}</p>
       </div>
       <div className="post-actions">
-        <button onClick={() => onEdit(post)} className='edit-button'>Edit</button>
-        <button onClick={() => onDelete(post.id)} className='delete-button'>Delete</button>
+        {username === post.author && (
+          <>
+            <button onClick={() => onEdit(post)} className='edit-button'>Edit</button>
+            <button onClick={() => onDelete(post.id)} className='delete-button'>Delete</button>
+          </>
+        )}
         <button onClick={onBack} className="back-button">Back</button>
       </div>
     
