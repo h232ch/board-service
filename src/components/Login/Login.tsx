@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import SignUp from '../SignUp/SignUp';
-import './Login.css';
+import { 
+  Box, 
+  Typography, 
+  TextField, 
+  Button, 
+  Paper,
+  Stack,
+  Link
+} from '@mui/material';
 
 // Define the type for our props
 interface LoginProps {
@@ -43,51 +51,63 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSignUp }) => {
   }
 
   return (
-    <div className="login-container">
-      <h2 className="login-title">Login</h2>
-      <form className="login-form" onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="username">Username</label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            placeholder="Username"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Password"
-            required
-          />
-        </div>
-
-        <button className="login-button" type="submit">
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '60vh'
+      }}
+    >
+      <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 400 }}>
+        <Typography variant="h4" component="h1" gutterBottom align="center">
           Login
-        </button>
-        
-        <div className="signup-prompt">
-          <span>Don't have an account?</span>
-          <button
-            type="button"
-            className="signup-link"
-            onClick={() => setShowSignUp(true)}
-          >
-            Sign Up
-          </button>
-        </div>
-      </form>
-    </div>
+        </Typography>
+        <Box component="form" onSubmit={handleSubmit}>
+          <Stack spacing={3}>
+            <TextField
+              fullWidth
+              label="Username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              size="large"
+            >
+              Login
+            </Button>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2" component="span">
+                Don't have an account?{' '}
+              </Typography>
+              <Link
+                component="button"
+                variant="body2"
+                onClick={() => setShowSignUp(true)}
+                sx={{ cursor: 'pointer' }}
+              >
+                Sign Up
+              </Link>
+            </Box>
+          </Stack>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 

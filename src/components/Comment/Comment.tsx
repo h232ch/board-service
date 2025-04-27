@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { Comment as CommentType } from '../../types/Comment';
-import './Comment.css';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  TextField, 
+  Paper,
+  Stack
+} from '@mui/material';
+import { format } from 'date-fns';
 
 interface CommentProps {
   comment: CommentType;
@@ -57,115 +65,186 @@ const Comment: React.FC<CommentProps> = ({
   };
 
   return (
-    <div className="comment">
-      <div className="comment-header">
-        <div className="comment-meta">
-          <span className="comment-author">{comment.author}</span>
-          <span>•</span>
-          <span className="comment-date">{new Date(comment.createdAt).toLocaleDateString()}</span>
-        </div>
-      </div>
-      <div className="comment-content">
+    <Paper elevation={1} sx={{ p: 2, mb: 2 }}>
+      <Box sx={{ mb: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
+          <Typography variant="subtitle2" color="primary">
+            {comment.author}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {format(new Date(comment.createdAt), 'yyyy-MM-dd HH:mm')}
+          </Typography>
+        </Box>
         {isEditing ? (
-          <div className="comment-edit-form">
-            <textarea
+          <Box>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              className="comment-edit-textarea"
+              sx={{ mb: 1 }}
             />
-            <div className="comment-edit-buttons">
-              <button onClick={handleSubmit} className="comment-save-button">Save</button>
-              <button onClick={handleCancel} className="comment-cancel-button">Cancel</button>
-            </div>
-          </div>
+            <Stack direction="row" spacing={1}>
+              <Button 
+                variant="contained" 
+                size="small" 
+                onClick={handleSubmit}
+              >
+                Save
+              </Button>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+            </Stack>
+          </Box>
         ) : (
           <>
-            <p>{comment.content}</p>
-            <div className="comment-buttons">
+            <Typography variant="body1" paragraph>
+              {comment.content}
+            </Typography>
+            <Stack direction="row" spacing={1}>
               {comment.author === username && (
                 <>
-                  <button className="comment-edit-button" onClick={() => setIsEditing(true)}>Edit</button>
-                  <button className="comment-delete-button" onClick={() => onDelete(comment.id)}>Delete</button>
+                  <Button 
+                    variant="outlined" 
+                    size="small" 
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Edit
+                  </Button>
+                  <Button 
+                    variant="outlined" 
+                    size="small" 
+                    color="error"
+                    onClick={() => onDelete(comment.id)}
+                  >
+                    Delete
+                  </Button>
                 </>
               )}
-              <button className="comment-reply-button" onClick={() => setIsReplying(true)}>Reply</button>
-            </div>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                onClick={() => setIsReplying(true)}
+              >
+                Reply
+              </Button>
+            </Stack>
           </>
         )}
-      </div>
+      </Box>
 
       {isReplying && (
-        <div className="reply-form">
-          <textarea
+        <Box sx={{ mt: 2, pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
-            className="reply-textarea"
             placeholder="Write a reply..."
+            sx={{ mb: 1 }}
           />
-          <div className="reply-buttons">
-            <button onClick={handleReplySubmit} className="reply-submit-button">Submit</button>
-            <button onClick={() => setIsReplying(false)} className="reply-cancel-button">Cancel</button>
-          </div>
-        </div>
+          <Stack direction="row" spacing={1}>
+            <Button 
+              variant="contained" 
+              size="small" 
+              onClick={handleReplySubmit}
+            >
+              Submit
+            </Button>
+            <Button 
+              variant="outlined" 
+              size="small" 
+              onClick={() => setIsReplying(false)}
+            >
+              Cancel
+            </Button>
+          </Stack>
+        </Box>
       )}
 
       {comment.replies && comment.replies.length > 0 && (
-        <div className="replies">
+        <Box sx={{ mt: 2, pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
           {comment.replies.map(reply => (
-            <div key={reply.id} className="reply">
-              <div className="reply-header">
-                <div className="reply-meta">
-                  <span className="reply-author">{reply.author}</span>
-                  <span>•</span>
-                  <span className="reply-date">{new Date(reply.createdAt).toLocaleDateString()}</span>
-                </div>
-              </div>
-              <div className="reply-content">
-                {editingReplyId === reply.id ? (
-                  <div className="reply-edit-form">
-                    <textarea
-                      value={editReplyContent}
-                      onChange={(e) => setEditReplyContent(e.target.value)}
-                      className="reply-edit-textarea"
-                    />
-                    <div className="reply-edit-buttons">
-                      <button onClick={() => handleEditReplySubmit(reply.id)} className="reply-save-button">Save</button>
-                      <button onClick={() => {
+            <Box key={reply.id} sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
+                <Typography variant="subtitle2" color="primary">
+                  {reply.author}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {format(new Date(reply.createdAt), 'yyyy-MM-dd HH:mm')}
+                </Typography>
+              </Box>
+              {editingReplyId === reply.id ? (
+                <Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    value={editReplyContent}
+                    onChange={(e) => setEditReplyContent(e.target.value)}
+                    sx={{ mb: 1 }}
+                  />
+                  <Stack direction="row" spacing={1}>
+                    <Button 
+                      variant="contained" 
+                      size="small" 
+                      onClick={() => handleEditReplySubmit(reply.id)}
+                    >
+                      Save
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      onClick={() => {
                         setEditingReplyId(null);
                         setEditReplyContent('');
-                      }} className="reply-cancel-button">Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <p>{reply.content}</p>
-                    {reply.author === username && (
-                      <div className="reply-buttons">
-                        <button
-                          className="reply-edit-button"
-                          onClick={() => {
-                            setEditingReplyId(reply.id);
-                            setEditReplyContent(reply.content);
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="reply-delete-button"
-                          onClick={() => onDeleteReply(comment.id, reply.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </Stack>
+                </Box>
+              ) : (
+                <>
+                  <Typography variant="body1" paragraph>
+                    {reply.content}
+                  </Typography>
+                  {reply.author === username && (
+                    <Stack direction="row" spacing={1}>
+                      <Button 
+                        variant="outlined" 
+                        size="small" 
+                        onClick={() => {
+                          setEditingReplyId(reply.id);
+                          setEditReplyContent(reply.content);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outlined" 
+                        size="small" 
+                        color="error"
+                        onClick={() => onDeleteReply(comment.id, reply.id)}
+                      >
+                        Delete
+                      </Button>
+                    </Stack>
+                  )}
+                </>
+              )}
+            </Box>
           ))}
-        </div>
+        </Box>
       )}
-    </div>
+    </Paper>
   );
 };
 

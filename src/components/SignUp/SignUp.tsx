@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import './SignUp.css';
+import { 
+  Box, 
+  Typography, 
+  TextField, 
+  Button, 
+  Paper,
+  Stack
+} from '@mui/material';
 
 interface SignUpProps {
   onSignUp: (username: string, password: string) => void;
@@ -65,58 +72,73 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, onCancel }) => {
   };
 
   return (
-    <div className="signup-container">
-      <h2>Create Account</h2>
-      <form onSubmit={handleSubmit} className="signup-form">
-        <div className="form-group">
-          <label htmlFor="username">Username</label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            className={errors.username ? 'error' : ''}
-          />
-          {errors.username && <span className="error-message">{errors.username}</span>}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            className={errors.password ? 'error' : ''}
-          />
-          {errors.password && <span className="error-message">{errors.password}</span>}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="confirmPassword">Confirm Password</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            className={errors.confirmPassword ? 'error' : ''}
-          />
-          {errors.confirmPassword && (
-            <span className="error-message">{errors.confirmPassword}</span>
-          )}
-        </div>
-
-        <div className="button-group">
-          <button type="submit" className="signup-button">Sign Up</button>
-          <button type="button" onClick={onCancel} className="cancel-button">
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '60vh'
+      }}
+    >
+      <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 400 }}>
+        <Typography variant="h4" component="h1" gutterBottom align="center">
+          Create Account
+        </Typography>
+        <Box component="form" onSubmit={handleSubmit}>
+          <Stack spacing={3}>
+            <TextField
+              fullWidth
+              label="Username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              error={!!errors.username}
+              helperText={errors.username}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              error={!!errors.password}
+              helperText={errors.password}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Confirm Password"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword}
+              required
+            />
+            <Stack direction="row" spacing={2}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                fullWidth
+              >
+                Sign Up
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={onCancel}
+                fullWidth
+              >
+                Cancel
+              </Button>
+            </Stack>
+          </Stack>
+        </Box>
+      </Paper>
+    </Box>
   );
 };
 

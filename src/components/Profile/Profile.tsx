@@ -1,6 +1,20 @@
 import React from 'react';
 import { User } from '../../types/User';
-import './Profile.css';
+import { 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  IconButton, 
+  Box,
+  Typography,
+  Avatar,
+  List,
+  ListItem,
+  ListItemText,
+  Divider
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import { format } from 'date-fns';
 
 interface ProfileProps {
   user: User;
@@ -8,49 +22,58 @@ interface ProfileProps {
 }
 
 const Profile: React.FC<ProfileProps> = ({ user, onClose }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
   return (
-    <div className="profile-modal-overlay" onClick={onClose}>
-      <div className="profile-modal" onClick={e => e.stopPropagation()}>
-        <div className="profile-header">
-          <h2>My Profile</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
-        </div>
-        
-        <div className="profile-content">
-          <div className="profile-avatar">
+    <Dialog 
+      open={true} 
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6">My Profile</Typography>
+          <IconButton onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </DialogTitle>
+      <DialogContent>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+          <Avatar 
+            sx={{ 
+              width: 100, 
+              height: 100, 
+              fontSize: '2.5rem',
+              mb: 2
+            }}
+          >
             {user.id.charAt(0).toUpperCase()}
-          </div>
-          
-          <div className="profile-info">
-            <div className="info-group">
-              <label>Username</label>
-              <span>{user.id}</span>
-            </div>
-            
-            <div className="info-group">
-              <label>Member Since</label>
-              <span>{formatDate(user.signupDate)}</span>
-            </div>
-            
-            <div className="info-group">
-              <label>Last Login</label>
-              <span>{formatDate(user.loginDate)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </Avatar>
+        </Box>
+        <List>
+          <ListItem>
+            <ListItemText 
+              primary="Username"
+              secondary={user.id}
+            />
+          </ListItem>
+          <Divider />
+          <ListItem>
+            <ListItemText 
+              primary="Member Since"
+              secondary={format(new Date(user.signupDate), 'MMMM d, yyyy h:mm a')}
+            />
+          </ListItem>
+          <Divider />
+          <ListItem>
+            <ListItemText 
+              primary="Last Login"
+              secondary={format(new Date(user.loginDate), 'MMMM d, yyyy h:mm a')}
+            />
+          </ListItem>
+        </List>
+      </DialogContent>
+    </Dialog>
   );
 };
 

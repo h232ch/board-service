@@ -1,6 +1,5 @@
 // src/components/NewComponent/NewComponent.tsx
 import React from 'react';
-import './NewComponent.css';
 
 interface NewComponentProps {
   // props 타입 정의

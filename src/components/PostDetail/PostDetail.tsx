@@ -2,7 +2,16 @@ import React, { useState } from 'react';
 import { Post } from '../../types/Post';
 import { Comment as CommentType } from '../../types/Comment';
 import CommentList from '../Comment/CommentList';
-import './PostDetail.css';
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  TextField, 
+  Paper,
+  Divider,
+  Stack
+} from '@mui/material';
+import { format } from 'date-fns';
 
 interface PostDetailProps {
   post: Post;
@@ -19,7 +28,20 @@ interface PostDetailProps {
   onDeleteReply: (postId: number, parentId: number, replyId: number) => void;
 }
 
-const PostDetail: React.FC<PostDetailProps> = ({ post, username, onBack, onEdit, onDelete, comments, onAddComment, onDeleteComment, onEditComment, onAddReply, onEditReply, onDeleteReply }) => {
+const PostDetail: React.FC<PostDetailProps> = ({ 
+  post, 
+  username, 
+  onBack, 
+  onEdit, 
+  onDelete, 
+  comments, 
+  onAddComment, 
+  onDeleteComment, 
+  onEditComment, 
+  onAddReply, 
+  onEditReply, 
+  onDeleteReply 
+}) => {
   const [newComment, setNewComment] = useState({
     content: '',
   });
@@ -30,7 +52,7 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, username, onBack, onEdit,
 
     const comment: CommentType = {
       id: Date.now(),
-      author: username, // TODO: 실제 로그인한 사용자 정보 사용
+      author: username,
       content: newComment.content,
       createdAt: new Date().toISOString(),
     };
@@ -40,40 +62,73 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, username, onBack, onEdit,
   };
 
   return (
-    <div className="post-detail">
-      <div className="post-detail-header">
-        <h1 className="post-detail-title">{post.title}</h1>
-        <div className="post-detail-meta">
-          <span className="post-detail-author">Author: {post.author}</span>
-          <span className="post-detail-date">{new Date(post.createdAt).toLocaleString()}</span>
-        </div>
-      </div>
-      <div className="post-detail-content">
-        <p>{post.content}</p>
-      </div>
-      <div className="post-actions">
-        {username === post.author && (
-          <>
-            <button onClick={() => onEdit(post)} className='edit-button'>Edit</button>
-            <button onClick={() => onDelete(post.id)} className='delete-button'>Delete</button>
-          </>
-        )}
-        <button onClick={onBack} className="back-button">Back</button>
-      </div>
-    
-      <div className="comment-section">
-        <h2>Comments</h2>
-        <form onSubmit={handleCommentSubmit} className="comment-form">
-          <div className="form-group">
-            <textarea
-              placeholder="Comment Contents"
-              value={newComment.content}
-              onChange={(e) => setNewComment({ content: e.target.value })}
-              className="comment-textarea"
-            />
-          </div>
-          <button type="submit" className="comment-submit">New Comment</button>
-        </form>
+    <Box>
+      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          {post.title}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Author: {post.author}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {format(new Date(post.createdAt), 'yyyy-MM-dd HH:mm')}
+          </Typography>
+        </Box>
+        <Divider sx={{ my: 2 }} />
+        <Typography variant="body1" paragraph>
+          {post.content}
+        </Typography>
+        <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+          {username === post.author && (
+            <>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={() => onEdit(post)}
+              >
+                Edit
+              </Button>
+              <Button 
+                variant="contained" 
+                color="error" 
+                onClick={() => onDelete(post.id)}
+              >
+                Delete
+              </Button>
+            </>
+          )}
+          <Button 
+            variant="outlined" 
+            onClick={onBack}
+          >
+            Back
+          </Button>
+        </Stack>
+      </Paper>
+
+      <Paper elevation={3} sx={{ p: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          Comments
+        </Typography>
+        <Box component="form" onSubmit={handleCommentSubmit} sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            placeholder="Write a comment..."
+            value={newComment.content}
+            onChange={(e) => setNewComment({ content: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="primary"
+          >
+            Add Comment
+          </Button>
+        </Box>
         <CommentList 
           comments={comments} 
           postId={post.id}
@@ -84,8 +139,8 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, username, onBack, onEdit,
           onDeleteReply={onDeleteReply}
           username={username}
         />
-      </div>
-    </div>
+      </Paper>
+    </Box>
   );
 };
 

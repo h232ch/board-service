@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Post } from '../../types/Post';
-import './PostForm.css';
+import { 
+  Box, 
+  Typography, 
+  TextField, 
+  Button, 
+  Paper,
+  Stack
+} from '@mui/material';
 
 interface PostFormProps {
   initialData?: Post;
@@ -31,47 +38,54 @@ const PostForm: React.FC<PostFormProps> = ({ initialData, username, onSubmit, on
   };
 
   return (
-    <div className="post-form-container">
-      <h2>{initialData ? 'Edit Post' : 'Create New Post'}</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="title">Title</label>
-          <input
-            type="text"
-            id="title"
+    <Paper elevation={3} sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>
+        {initialData ? 'Edit Post' : 'Create New Post'}
+      </Typography>
+      <Box component="form" onSubmit={handleSubmit}>
+        <Stack spacing={3}>
+          <TextField
+            fullWidth
+            label="Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
           />
-        </div>
-        <div className="form-group">
-          <label htmlFor="content">Content</label>
-          <textarea
-            id="content"
+          <TextField
+            fullWidth
+            multiline
+            rows={6}
+            label="Content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             required
           />
-        </div>
-        <div className="form-group">
-          <label htmlFor="author">Author</label>
-          <input
-            type="text"
-            id="author"
-            value={username}   // username 변수를 사용
-            readOnly           // 읽기 전용 설정
+          <TextField
+            fullWidth
+            label="Author"
+            value={username}
+            InputProps={{
+              readOnly: true,
+            }}
           />
-        </div>
-        <div className="form-actions">
-          <button type="button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button type="submit">
-            {initialData ? 'Save Changes' : 'Create Post'}
-          </button>
-        </div>
-      </form>
-    </div>
+          <Stack direction="row" spacing={2} justifyContent="flex-end">
+            <Button 
+              variant="outlined" 
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              variant="contained" 
+              color="primary"
+            >
+              {initialData ? 'Save Changes' : 'Create Post'}
+            </Button>
+          </Stack>
+        </Stack>
+      </Box>
+    </Paper>
   );
 };
 

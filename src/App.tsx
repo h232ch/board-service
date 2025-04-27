@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { ThemeProvider, CssBaseline, Container, Box } from '@mui/material';
+import { BrowserRouter } from 'react-router-dom';
 import Header from './components/Header/Header';
 import PostList from './components/PostList/PostList';
 import PostDetail from './components/PostDetail/PostDetail';
@@ -7,7 +9,7 @@ import Login from './components/Login/Login';
 import { Post } from './types/Post';
 import { Comment } from './types/Comment';
 import { User } from './types/User';
-import './App.css';
+import theme from './theme';
 
 const App: React.FC = () => {
 
@@ -34,11 +36,6 @@ const App: React.FC = () => {
     },
   ]);
   const [comments, setComments] = useState<{ [postId: number]: Comment[] }>({});
-  // useEffect를 사용하여 업데이트된 값을 출력
-  // useEffect(() => {
-  //   console.log("posts가 변경되었습니다!", posts);
-  // }, [posts]);
-
   const handleLogin = (username: string, password: string) => {
     const now = new Date().toISOString();
     const newUser: User = {
@@ -109,7 +106,7 @@ const App: React.FC = () => {
       // useState는 비동기로 동작하기 때문에 아래 코드에는 업데이트된 값이 반영되지 않음
       console.log(posts)
     
-      setSelectedPost(updatedPost);   // ✅ 여기 수정!
+      setSelectedPost(updatedPost); 
       setIsEditing(false);
 
     } else {
@@ -199,10 +196,6 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleOnClick = () => {
-
-  };
-
   const handleSignUp = (username: string, password: string) => {
     // Create a new user with signup date
     const now = new Date().toISOString();
@@ -219,56 +212,58 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="app">
-      <Header 
-        isLoggedIn={isLoggedIn}
-        username={username}
-        onLogout={handleLogout}
-        userInfo={currentUser}
-      />
-      <main className="main-content">
-        {!isLoggedIn ? (
-          <Login onLogin={handleLogin} onSignUp={handleSignUp} />
-        ) : isCreating ? (
-          <PostForm
-            onSubmit={handleSubmitPost}
+    <BrowserRouter>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+          <Header 
+            isLoggedIn={isLoggedIn}
             username={username}
-            onCancel={handleBackToList}
+            onLogout={handleLogout}
+            userInfo={currentUser}
           />
-        ) : isEditing && selectedPost ? (
-          <PostForm
-            initialData={selectedPost}
-            username={username}
-            onSubmit={handleSubmitPost}
-            onCancel={handleBackToList}
-          />
-        ) : selectedPost ? (
-          <PostDetail
-            post={selectedPost}
-            username={username}
-            onEdit={handleEditPost}
-            onDelete={handleDeletePost}
-            onBack={handleBackToList}
-            comments={comments[selectedPost.id] || []}
-            onAddComment={handleAddComment}
-            onDeleteComment={handleDeleteComment}
-            onEditComment={handleEditComment}
-            onAddReply={handleAddReply}
-            onEditReply={handleEditReply}
-            onDeleteReply={handleDeleteReply}
-          />
-        ) : (
-          <div className="post-list-container">
-            <div className="post-list-header">
-              <button onClick={handleCreatePost} className="create-button">
-                New
-              </button>
-            </div>
-            <PostList posts={posts} onPostClick={handlePostClick} />
-          </div>
-        )}
-      </main>
-    </div>
+          <Container maxWidth={false} sx={{ maxWidth: 800, width: '100%', mx: 'auto', py: 4 }}>
+            {!isLoggedIn ? (
+              <Login onLogin={handleLogin} onSignUp={handleSignUp} />
+            ) : isCreating ? (
+              <PostForm
+                onSubmit={handleSubmitPost}
+                username={username}
+                onCancel={handleBackToList}
+              />
+            ) : isEditing && selectedPost ? (
+              <PostForm
+                initialData={selectedPost}
+                username={username}
+                onSubmit={handleSubmitPost}
+                onCancel={handleBackToList}
+              />
+            ) : selectedPost ? (
+              <PostDetail
+                post={selectedPost}
+                username={username}
+                onEdit={handleEditPost}
+                onDelete={handleDeletePost}
+                onBack={handleBackToList}
+                comments={comments[selectedPost.id] || []}
+                onAddComment={handleAddComment}
+                onDeleteComment={handleDeleteComment}
+                onEditComment={handleEditComment}
+                onAddReply={handleAddReply}
+                onEditReply={handleEditReply}
+                onDeleteReply={handleDeleteReply}
+              />
+            ) : (
+              <PostList
+                posts={posts}
+                onPostClick={handlePostClick}
+                onCreatePost={handleCreatePost}
+              />
+            )}
+          </Container>
+        </Box>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 };
 

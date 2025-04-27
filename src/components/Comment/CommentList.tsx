@@ -1,7 +1,7 @@
 import React from 'react';
 import { Comment as CommentType } from '../../types/Comment';
 import Comment from './Comment';
-import './CommentList.css';
+import { Box } from '@mui/material';
 
 interface CommentListProps {
   comments: CommentType[];
@@ -25,7 +25,7 @@ const CommentList: React.FC<CommentListProps> = ({
   onDeleteReply
 }) => {
   return (
-    <div className="comment-list">
+    <Box sx={{ mt: 2 }}>
       {comments.map(comment => (
         <Comment
           key={comment.id}
@@ -38,7 +38,7 @@ const CommentList: React.FC<CommentListProps> = ({
           onDeleteReply={(parentId, replyId) => onDeleteReply(postId, parentId, replyId)}
         />
       ))}
-    </div>
+    </Box>
   );
 };
 
