@@ -137,6 +137,57 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleAddReply = (postId: number, parentId: number, content: string) => {
+    const newReply: Comment = {
+      id: Date.now(),
+      author: username,
+      content: content,
+      createdAt: new Date().toISOString(),
+      parentId: parentId
+    };
+
+    setComments(prev => ({
+      ...prev,
+      [postId]: prev[postId].map(comment =>
+        comment.id === parentId
+          ? { ...comment, replies: [...(comment.replies || []), newReply] }
+          : comment
+      )
+    }));
+  };
+
+  const handleEditReply = (postId: number, parentId: number, replyId: number, newContent: string) => {
+    setComments(prev => ({
+      ...prev,
+      [postId]: prev[postId].map(comment =>
+        comment.id === parentId
+          ? {
+              ...comment,
+              replies: (comment.replies || []).map(reply =>
+                reply.id === replyId
+                  ? { ...reply, content: newContent }
+                  : reply
+              )
+            }
+          : comment
+      )
+    }));
+  };
+
+  const handleDeleteReply = (postId: number, parentId: number, replyId: number) => {
+    setComments(prev => ({
+      ...prev,
+      [postId]: prev[postId].map(comment =>
+        comment.id === parentId
+          ? {
+              ...comment,
+              replies: (comment.replies || []).filter(reply => reply.id !== replyId)
+            }
+          : comment
+      )
+    }));
+  };
+
   const handleOnClick = () => {
 
   };
@@ -175,6 +226,9 @@ const App: React.FC = () => {
             onAddComment={handleAddComment}
             onDeleteComment={handleDeleteComment}
             onEditComment={handleEditComment}
+            onAddReply={handleAddReply}
+            onEditReply={handleEditReply}
+            onDeleteReply={handleDeleteReply}
           />
         ) : (
           <div className="post-list-container">

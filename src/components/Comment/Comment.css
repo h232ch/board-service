@@ -33,7 +33,8 @@
   line-height: 1.5;
 }
 
-.comment-buttons {
+.comment-buttons,
+.reply-buttons {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
@@ -42,7 +43,13 @@
 .comment-edit-button,
 .comment-delete-button,
 .comment-save-button,
-.comment-cancel-button {
+.comment-cancel-button,
+.comment-reply-button,
+.reply-edit-button,
+.reply-delete-button,
+.reply-save-button,
+.reply-cancel-button,
+.reply-submit-button {
   padding: 0.3rem 0.8rem;
   border: none;
   border-radius: 4px;
@@ -51,31 +58,46 @@
   transition: background-color 0.2s;
 }
 
-.comment-edit-button {
+.comment-edit-button,
+.reply-edit-button {
   background-color: #4CAF50;
   color: white;
 }
 
-.comment-delete-button {
+.comment-delete-button,
+.reply-delete-button {
   background-color: #f44336;
   color: white;
 }
 
-.comment-save-button {
+.comment-save-button,
+.reply-save-button,
+.reply-submit-button {
   background-color: #2196F3;
   color: white;
 }
 
-.comment-cancel-button {
+.comment-cancel-button,
+.reply-cancel-button {
   background-color: #9e9e9e;
   color: white;
 }
 
-.comment-edit-form {
+.comment-reply-button {
+  background-color: #FF9800;
+  color: white;
+}
+
+.comment-edit-form,
+.reply-edit-form,
+.reply-form {
+  margin-top: 1rem;
   width: 100%;
 }
 
-.comment-edit-textarea {
+.comment-edit-textarea,
+.reply-edit-textarea,
+.reply-textarea {
   width: 100%;
   min-height: 80px;
   padding: 0.5rem;
@@ -85,24 +107,74 @@
   resize: vertical;
 }
 
-.comment-edit-buttons {
+.comment-edit-buttons,
+.reply-edit-buttons {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
 }
 
-.comment-edit-button:hover {
+.replies {
+  margin-left: 2rem;
+  margin-top: 1rem;
+  padding-left: 1rem;
+  border-left: 2px solid #e1e1e1;
+}
+
+.reply {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.reply-header {
+  margin-bottom: 0.5rem;
+}
+
+.reply-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reply-author {
+  font-weight: bold;
+  color: #333;
+}
+
+.reply-date {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.reply-content {
+  color: #444;
+  line-height: 1.5;
+}
+
+/* Hover effects */
+.comment-edit-button:hover,
+.reply-edit-button:hover {
   background-color: #45a049;
 }
 
-.comment-delete-button:hover {
+.comment-delete-button:hover,
+.reply-delete-button:hover {
   background-color: #da190b;
 }
 
-.comment-save-button:hover {
+.comment-save-button:hover,
+.reply-save-button:hover,
+.reply-submit-button:hover {
   background-color: #1976D2;
 }
 
-.comment-cancel-button:hover {
+.comment-cancel-button:hover,
+.reply-cancel-button:hover {
   background-color: #757575;
+}
+
+.comment-reply-button:hover {
+  background-color: #F57C00;
 }
