@@ -20,7 +20,7 @@ const CommentList: React.FC<CommentListProps> = ({ comments, postId, onDeleteCom
               onClick={() => onDeleteComment(postId, comment.id)}
               className="comment-delete-btn"
             >
-              삭제
+              Delete
             </button>
           </div>
           <div className="comment-content">{comment.content}</div>
