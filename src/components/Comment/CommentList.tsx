@@ -1,30 +1,30 @@
 import React from 'react';
-import { Comment } from '../../types/Comment';
+import { Comment as CommentType } from '../../types/Comment';
+import Comment from './Comment';
 import './CommentList.css';
 
 interface CommentListProps {
-  comments: Comment[];
+  comments: CommentType[];
   postId: number;
   onDeleteComment: (postId: number, commentId: number) => void;
+  onEditComment: (postId: number, commentId: number, newContent: string) => void;
 }
 
-const CommentList: React.FC<CommentListProps> = ({ comments, postId, onDeleteComment }) => {
+const CommentList: React.FC<CommentListProps> = ({ 
+  comments, 
+  postId, 
+  onDeleteComment,
+  onEditComment 
+}) => {
   return (
     <div className="comment-list">
       {comments.map(comment => (
-        <div key={comment.id} className="comment-item">
-          <div className="comment-header">
-            <span className="comment-author">{comment.author}</span>
-            <span className="comment-date">{new Date(comment.createdAt).toLocaleString()}</span>
-            <button 
-              onClick={() => onDeleteComment(postId, comment.id)}
-              className="comment-delete-btn"
-            >
-              Delete
-            </button>
-          </div>
-          <div className="comment-content">{comment.content}</div>
-        </div>
+        <Comment
+          key={comment.id}
+          comment={comment}
+          onDelete={(commentId) => onDeleteComment(postId, commentId)}
+          onEdit={(commentId, newContent) => onEditComment(postId, commentId, newContent)}
+        />
       ))}
     </div>
   );

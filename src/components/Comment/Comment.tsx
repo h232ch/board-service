@@ -1,14 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Comment as CommentType } from '../../types/Comment';
 import './Comment.css';
 
 interface CommentProps {
   comment: CommentType;
   onDelete: (commentId: number) => void;
-  onEdit: (comment: CommentType) => void;
+  onEdit: (commentId: number, newContent: string) => void;
 }
 
 const Comment: React.FC<CommentProps> = ({ comment, onDelete, onEdit }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+
+  const handleSubmit = () => {
+    if (editContent.trim()) {
+      onEdit(comment.id, editContent);
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditContent(comment.content);
+    setIsEditing(false);
+  };
 
   return (
     <div className="comment">
@@ -20,11 +34,28 @@ const Comment: React.FC<CommentProps> = ({ comment, onDelete, onEdit }) => {
         </div>
       </div>
       <div className="comment-content">
-        <p>{comment.content}</p>
-        <button className="comment-edit-button" onClick={() => onEdit(comment)}>Edit</button>
-        <button className="comment-delete-button" onClick={() => onDelete(comment.id)}>Delete</button>
+        {isEditing ? (
+          <div className="comment-edit-form">
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="comment-edit-textarea"
+            />
+            <div className="comment-edit-buttons">
+              <button onClick={handleSubmit} className="comment-save-button">Save</button>
+              <button onClick={handleCancel} className="comment-cancel-button">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p>{comment.content}</p>
+            <div className="comment-buttons">
+              <button className="comment-edit-button" onClick={() => setIsEditing(true)}>Edit</button>
+              <button className="comment-delete-button" onClick={() => onDelete(comment.id)}>Delete</button>
+            </div>
+          </>
+        )}
       </div>
-      
     </div>
   );
 };

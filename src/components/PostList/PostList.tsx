@@ -8,24 +8,27 @@ interface PostListProps {
 }
 
 const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
+  // Sort posts by date in descending order (newest first)
+  const sortedPosts = [...posts].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
-  if (posts.length === 0) {
+  if (sortedPosts.length === 0) {
     return <p>No posts available.</p>;
   }
 
   return (
     <div className="post-list">
-      {posts.map((post) => (
+      {sortedPosts.map((post) => (
         <div 
           key={post.id} 
           className="post-item"
           onClick={() => onPostClick(post.id)}
         >
-          <h3 className="post-title">{post.title}</h3>
+          <h2 className="post-title">{post.title}</h2>
           <div className="post-meta">
-            <span className="post-author">{post.author}</span>
-            <span>•</span>
-            <span className="post-date">{new Date(post.createdAt).toLocaleString()}</span>
+            <span className="post-author">작성자: {post.author}</span>
+            <span className="post-date">{new Date(post.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
       ))}

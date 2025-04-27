@@ -13,9 +13,10 @@ interface PostDetailProps {
   comments: CommentType[];
   onAddComment: (postId: number, comment: CommentType) => void;
   onDeleteComment: (postId: number, commentId: number) => void;
+  onEditComment: (postId: number, commentId: number, newContent: string) => void;
 }
 
-const PostDetail: React.FC<PostDetailProps> = ({ post, username, onBack, onEdit, onDelete, comments, onAddComment, onDeleteComment }) => {
+const PostDetail: React.FC<PostDetailProps> = ({ post, username, onBack, onEdit, onDelete, comments, onAddComment, onDeleteComment, onEditComment }) => {
   const [newComment, setNewComment] = useState({
     content: '',
   });
@@ -70,6 +71,7 @@ const PostDetail: React.FC<PostDetailProps> = ({ post, username, onBack, onEdit,
           comments={comments} 
           postId={post.id}
           onDeleteComment={onDeleteComment}
+          onEditComment={onEditComment}
         />
       </div>
     </div>

@@ -107,6 +107,7 @@ const App: React.FC = () => {
         id: Math.max(...posts.map(p => p.id), 0) + 1,
       };
       setPosts([...posts, newPost]);
+      setSelectedPost(newPost);
       setIsCreating(false);
     }
   };
@@ -122,6 +123,17 @@ const App: React.FC = () => {
     setComments(prev => ({
       ...prev,
       [postId]: prev[postId].filter(comment => comment.id !== commentId)
+    }));
+  };
+
+  const handleEditComment = (postId: number, commentId: number, newContent: string) => {
+    setComments(prev => ({
+      ...prev,
+      [postId]: prev[postId].map(comment =>
+        comment.id === commentId
+          ? { ...comment, content: newContent }
+          : comment
+      )
     }));
   };
 
@@ -162,6 +174,7 @@ const App: React.FC = () => {
             comments={comments[selectedPost.id] || []}
             onAddComment={handleAddComment}
             onDeleteComment={handleDeleteComment}
+            onEditComment={handleEditComment}
           />
         ) : (
           <div className="post-list-container">
