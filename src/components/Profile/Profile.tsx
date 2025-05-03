@@ -30,7 +30,11 @@ const Profile: React.FC<ProfileProps> = ({ user, onClose }) => {
       fullWidth
     >
       <DialogTitle>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ 
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
           <Typography variant="h6">My Profile</Typography>
           <IconButton onClick={onClose}>
             <CloseIcon />
@@ -38,7 +42,12 @@ const Profile: React.FC<ProfileProps> = ({ user, onClose }) => {
         </Box>
       </DialogTitle>
       <DialogContent>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ 
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          mb: 3
+        }}>
           <Avatar 
             sx={{ 
               width: 100, 

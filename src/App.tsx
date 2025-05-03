@@ -1,269 +1,46 @@
-import React, { useState } from 'react';
-import { ThemeProvider, CssBaseline, Container, Box } from '@mui/material';
-import { BrowserRouter } from 'react-router-dom';
-import Header from './components/Header/Header';
-import PostList from './components/PostList/PostList';
-import PostDetail from './components/PostDetail/PostDetail';
-import PostForm from './components/PostForm/PostForm';
-import Login from './components/Login/Login';
-import { Post } from './types/Post';
-import { Comment } from './types/Comment';
-import { User } from './types/User';
+import React from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { Box, Container } from '@mui/material';
 import theme from './theme';
+import Header from './components/Header/Header';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { BoardProvider } from './contexts/BoardContext';
+import { AuthRoutes } from './routes/AuthRoutes';
+import { BoardRoutes } from './routes/BoardRoutes';
 
-const App: React.FC = () => {
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('');
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: 1,
-      title: 'First Post',
-      content: 'This is the content of the first post.',
-      author: 'John Doe',
-      createdAt: '2024-03-20',
-    },
-    {
-      id: 2,
-      title: 'Second Post',
-      content: 'This is the content of the second post.',
-      author: 'Jane Smith',
-      createdAt: '2024-03-21',
-    },
-  ]);
-  const [comments, setComments] = useState<{ [postId: number]: Comment[] }>({});
-  const handleLogin = (username: string, password: string) => {
-    const now = new Date().toISOString();
-    const newUser: User = {
-      id: username,
-      loginDate: now,
-      signupDate: now // 처음 로그인할 때는 signupDate를 loginDate와 동일하게 설정
-    };
-    
-    setCurrentUser(newUser);
-    setIsLoggedIn(true);
-    setUsername(username);
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUsername('');
-    setSelectedPost(null);
-    setIsEditing(false);
-    setIsCreating(false);
-    setCurrentUser(null);
-  };
-
-  const handlePostClick = (postId: number) => {
-    const post = posts.find(p => p.id === postId);
-    if (post) {
-      setSelectedPost(post);
-      setIsEditing(false);
-      setIsCreating(false);
-    }
-  };
-
-  const handleBackToList = () => {
-    setSelectedPost(null);
-    setIsEditing(false);
-    setIsCreating(false);
-  };
-
-  const handleCreatePost = () => {
-    setIsCreating(true);
-    setSelectedPost(null);
-    setIsEditing(false);
-  };
-
-  const handleEditPost = (updatedPost: Post) => {
-    setPosts(posts.map(post => post.id === updatedPost.id ? updatedPost : post));
-    if (selectedPost?.id === updatedPost.id) {
-      setSelectedPost(updatedPost);
-      setIsEditing(true)
-    }
-  };
-
-  const handleDeletePost = (postId: number) => {
-    setPosts(posts.filter(post => post.id !== postId));
-    if (selectedPost?.id === postId) {
-      setSelectedPost(null);
-    }
-  };
-
-  const handleSubmitPost = (postData: Omit<Post, 'id'>) => {
-    if (isEditing && selectedPost) {
-      const updatedPost = { ...selectedPost, ...postData };
-    
-      setPosts(posts.map(p => 
-        p.id === selectedPost.id 
-          ? updatedPost
-          : p
-      ));
-      // useState는 비동기로 동작하기 때문에 아래 코드에는 업데이트된 값이 반영되지 않음
-      console.log(posts)
-    
-      setSelectedPost(updatedPost); 
-      setIsEditing(false);
-
-    } else {
-      const newPost: Post = {
-        ...postData,
-        id: Math.max(...posts.map(p => p.id), 0) + 1,
-      };
-      setPosts([...posts, newPost]);
-      setSelectedPost(newPost);
-      setIsCreating(false);
-    }
-  };
-
-  const handleAddComment = (postId: number, comment: Comment) => {
-    setComments(prev => ({
-      ...prev,
-      [postId]: [...(prev[postId] || []), comment]
-    }));
-  };
-
-  const handleDeleteComment = (postId: number, commentId: number) => {
-    setComments(prev => ({
-      ...prev,
-      [postId]: prev[postId].filter(comment => comment.id !== commentId)
-    }));
-  };
-
-  const handleEditComment = (postId: number, commentId: number, newContent: string) => {
-    setComments(prev => ({
-      ...prev,
-      [postId]: prev[postId].map(comment =>
-        comment.id === commentId
-          ? { ...comment, content: newContent }
-          : comment
-      )
-    }));
-  };
-
-  const handleAddReply = (postId: number, parentId: number, content: string) => {
-    const newReply: Comment = {
-      id: Date.now(),
-      author: username,
-      content: content,
-      createdAt: new Date().toISOString(),
-      parentId: parentId
-    };
-
-    setComments(prev => ({
-      ...prev,
-      [postId]: prev[postId].map(comment =>
-        comment.id === parentId
-          ? { ...comment, replies: [...(comment.replies || []), newReply] }
-          : comment
-      )
-    }));
-  };
-
-  const handleEditReply = (postId: number, parentId: number, replyId: number, newContent: string) => {
-    setComments(prev => ({
-      ...prev,
-      [postId]: prev[postId].map(comment =>
-        comment.id === parentId
-          ? {
-              ...comment,
-              replies: (comment.replies || []).map(reply =>
-                reply.id === replyId
-                  ? { ...reply, content: newContent }
-                  : reply
-              )
-            }
-          : comment
-      )
-    }));
-  };
-
-  const handleDeleteReply = (postId: number, parentId: number, replyId: number) => {
-    setComments(prev => ({
-      ...prev,
-      [postId]: prev[postId].map(comment =>
-        comment.id === parentId
-          ? {
-              ...comment,
-              replies: (comment.replies || []).filter(reply => reply.id !== replyId)
-            }
-          : comment
-      )
-    }));
-  };
-
-  const handleSignUp = (username: string, password: string) => {
-    // Create a new user with signup date
-    const now = new Date().toISOString();
-    const newUser: User = {
-      id: username,
-      loginDate: now,
-      signupDate: now
-    };
-    
-    // After signup, automatically log the user in
-    setCurrentUser(newUser);
-    setIsLoggedIn(true);
-    setUsername(username);
-  };
+const AppContent: React.FC = () => {
+  const { isLoggedIn, username, userInfo, logout } = useAuth();
 
   return (
-    <BrowserRouter>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-          <Header 
-            isLoggedIn={isLoggedIn}
-            username={username}
-            onLogout={handleLogout}
-            userInfo={currentUser}
-          />
-          <Container maxWidth={false} sx={{ maxWidth: 800, width: '100%', mx: 'auto', py: 4 }}>
-            {!isLoggedIn ? (
-              <Login onLogin={handleLogin} onSignUp={handleSignUp} />
-            ) : isCreating ? (
-              <PostForm
-                onSubmit={handleSubmitPost}
-                username={username}
-                onCancel={handleBackToList}
-              />
-            ) : isEditing && selectedPost ? (
-              <PostForm
-                initialData={selectedPost}
-                username={username}
-                onSubmit={handleSubmitPost}
-                onCancel={handleBackToList}
-              />
-            ) : selectedPost ? (
-              <PostDetail
-                post={selectedPost}
-                username={username}
-                onEdit={handleEditPost}
-                onDelete={handleDeletePost}
-                onBack={handleBackToList}
-                comments={comments[selectedPost.id] || []}
-                onAddComment={handleAddComment}
-                onDeleteComment={handleDeleteComment}
-                onEditComment={handleEditComment}
-                onAddReply={handleAddReply}
-                onEditReply={handleEditReply}
-                onDeleteReply={handleDeleteReply}
-              />
-            ) : (
-              <PostList
-                posts={posts}
-                onPostClick={handlePostClick}
-                onCreatePost={handleCreatePost}
-              />
-            )}
-          </Container>
-        </Box>
-      </ThemeProvider>
-    </BrowserRouter>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Header 
+        isLoggedIn={isLoggedIn}
+        username={username}
+        onLogout={logout}
+        userInfo={userInfo}
+      />
+      <Container maxWidth={false} sx={{ maxWidth: 800, width: '100%', mx: 'auto', py: 4 }}>
+        <AuthRoutes />
+        <BoardRoutes />
+      </Container>
+    </Box>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <AuthProvider>
+          <BoardProvider>
+            <AppContent />
+          </BoardProvider>
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 };
 

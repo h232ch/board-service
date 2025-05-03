@@ -1,5 +1,5 @@
 import React from 'react';
-import { Post } from '../../types/Post';
+import { Post } from '../../../types/Post';
 import { 
   List, 
   ListItem, 
@@ -10,6 +10,7 @@ import {
   Paper
 } from '@mui/material';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface PostListProps {
   posts: Post[];
@@ -18,28 +19,12 @@ interface PostListProps {
 }
 
 const PostList: React.FC<PostListProps> = ({ posts, onPostClick, onCreatePost }) => {
-  // Sort posts by date in descending order (newest first)
-  const sortedPosts = [...posts].sort((a, b) => 
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  const navigate = useNavigate();
 
-  if (sortedPosts.length === 0) {
-    return (
-      <Box sx={{ textAlign: 'center', mt: 4 }}>
-        <Typography variant="h6" color="text.secondary">
-          No posts available.
-        </Typography>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          onClick={onCreatePost}
-          sx={{ mt: 2 }}
-        >
-          Create New Post
-        </Button>
-      </Box>
-    );
-  }
+  const handlePostClick = (postId: number) => {
+    onPostClick(postId);
+    navigate(`/board/${postId}`);
+  };
 
   return (
     <Box>
@@ -53,9 +38,9 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick, onCreatePost })
         </Button>
       </Box>
       <List>
-        {sortedPosts.map((post) => (
+        {posts.map((post) => (
           <Paper 
-            key={post.id}
+            key={post.id} 
             elevation={2}
             sx={{ 
               mb: 2,
@@ -66,7 +51,7 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick, onCreatePost })
             }}
           >
             <ListItem 
-              onClick={() => onPostClick(post.id)}
+              onClick={() => handlePostClick(post.id)}
             >
               <ListItemText
                 primary={

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Post } from '../../types/Post';
-import { Comment as CommentType } from '../../types/Comment';
+import { Post } from '../../../types/Post';
+import { Comment as CommentType } from '../../../types/Comment';
 import CommentList from '../Comment/CommentList';
 import { 
   Box, 
@@ -12,6 +12,7 @@ import {
   Stack
 } from '@mui/material';
 import { format } from 'date-fns';
+import Comment from '../Comment/Comment';
 
 interface PostDetailProps {
   post: Post;

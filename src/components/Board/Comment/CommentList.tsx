@@ -1,5 +1,5 @@
 import React from 'react';
-import { Comment as CommentType } from '../../types/Comment';
+import { Comment as CommentType } from '../../../types/Comment';
 import Comment from './Comment';
 import { Box } from '@mui/material';
 

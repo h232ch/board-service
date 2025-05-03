@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Post } from '../../types/Post';
+import { Post } from '../../../types/Post';
 import { 
   Box, 
   Typography, 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Comment as CommentType } from '../../types/Comment';
+import { Comment as CommentType } from '../../../types/Comment';
 import { 
   Box, 
   Typography, 
