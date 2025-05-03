@@ -25,15 +25,15 @@ export const BoardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [posts, setPosts] = useState<Post[]>([
     {
       id: 1,
-      title: '첫 번째 게시글',
-      content: '이것은 첫 번째 게시글의 내용입니다.',
+      title: 'First Post',
+      content: 'This is the content of the first post.',
       author: 'user1',
       createdAt: new Date().toISOString(),
     },
     {
       id: 2,
-      title: '두 번째 게시글',
-      content: '이것은 두 번째 게시글의 내용입니다.',
+      title: 'Second Post',
+      content: 'This is the content of the second post.',
       author: 'user2',
       createdAt: new Date().toISOString(),
     }
@@ -52,11 +52,17 @@ export const BoardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const handleEditPost = (post: Post) => {
     setPosts(posts.map(p => p.id === post.id ? post : p));
+    setSelectedPost(post);
   };
 
   const handleDeletePost = (postId: number) => {
-    setPosts(posts.filter(post => post.id !== postId));
-    setSelectedPost(null);
+    setPosts(prevPosts => {
+      const newPosts = prevPosts.filter(post => post.id !== postId);
+      if (selectedPost?.id === postId) {
+        setSelectedPost(null);
+      }
+      return newPosts;
+    });
   };
 
   const handleAddComment = (postId: number, comment: Comment) => {

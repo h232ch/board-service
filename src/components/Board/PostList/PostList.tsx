@@ -38,7 +38,9 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick, onCreatePost })
         </Button>
       </Box>
       <List>
-        {posts.map((post) => (
+        {posts
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .map((post) => (
           <Paper 
             key={post.id} 
             elevation={2}

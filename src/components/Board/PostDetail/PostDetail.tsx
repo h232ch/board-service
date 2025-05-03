@@ -12,7 +12,6 @@ import {
   Stack
 } from '@mui/material';
 import { format } from 'date-fns';
-import Comment from '../Comment/Comment';
 
 interface PostDetailProps {
   post: Post;

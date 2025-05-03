@@ -58,11 +58,22 @@ export const BoardRoutes: React.FC = () => {
           onCancel={() => navigate('/board')}
         />
       } />
+      <Route path="/board/:postId/edit" element={
+        selectedPost ? <PostForm 
+          initialData={selectedPost}
+          username={username}
+          onSubmit={(postData) => {
+            handleEditPost({ ...postData, id: selectedPost.id });
+            navigate(`/board/${selectedPost.id}`);
+          }}
+          onCancel={() => navigate(`/board/${selectedPost.id}`)}
+        /> : <Navigate to="/board" />
+      } />
       <Route path="/board/:postId" element={
         selectedPost ? <PostDetail 
           post={selectedPost} 
           username={username} 
-          onEdit={handleEditPost}
+          onEdit={() => navigate(`/board/${selectedPost.id}/edit`)}
           onDelete={handleDeletePost}
           onBack={() => navigate('/board')} 
           comments={comments[selectedPost.id] || []}
