@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, Container } from '@mui/material';
@@ -22,8 +22,9 @@ const AppContent: React.FC = () => {
         userInfo={userInfo}
       />
       <Container maxWidth={false} sx={{ maxWidth: 800, width: '100%', mx: 'auto', py: 4 }}>
-        <AuthRoutes />
-        <BoardRoutes />
+        <Routes>
+          <Route path="/*" element={isLoggedIn ? <BoardRoutes /> : <AuthRoutes />} />
+        </Routes>
       </Container>
     </Box>
   );

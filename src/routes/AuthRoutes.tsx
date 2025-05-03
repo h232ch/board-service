@@ -26,13 +26,14 @@ export const AuthRoutes: React.FC = () => {
 
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={
-        isLoggedIn ? <Navigate to="/board" /> :
         <Login 
           onLogin={handleLogin}
           onSignUp={handleSignUp}
         />
       } />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }; 

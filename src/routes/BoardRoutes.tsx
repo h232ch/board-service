@@ -33,13 +33,15 @@ export const BoardRoutes: React.FC = () => {
     }
   };
 
+  // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <Routes>
-      <Route path="/" element={
-        !isLoggedIn ? <Navigate to="/login" /> : <Navigate to="/board" />
-      } />
+      <Route path="/" element={<Navigate to="/board" replace />} />
       <Route path="/board" element={
-        !isLoggedIn ? <Navigate to="/login" /> :
         <PostList 
           posts={posts} 
           onPostClick={handlePostClick} 
@@ -47,7 +49,6 @@ export const BoardRoutes: React.FC = () => {
         />
       } />
       <Route path="/board/new" element={
-        !isLoggedIn ? <Navigate to="/login" /> :
         <PostForm 
           username={username}
           onSubmit={(postData) => {
@@ -58,7 +59,6 @@ export const BoardRoutes: React.FC = () => {
         />
       } />
       <Route path="/board/:postId" element={
-        !isLoggedIn ? <Navigate to="/login" /> :
         selectedPost ? <PostDetail 
           post={selectedPost} 
           username={username} 
@@ -74,6 +74,7 @@ export const BoardRoutes: React.FC = () => {
           onDeleteReply={handleDeleteReply}
         /> : <Navigate to="/board" />
       } />
+      <Route path="*" element={<Navigate to="/board" replace />} />
     </Routes>
   );
 }; 
