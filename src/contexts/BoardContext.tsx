@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { Post } from '../types/Post';
 import { Comment } from '../types/Comment';
+import { useAuth } from './AuthContext';
 
 interface BoardContextType {
   posts: Post[];
@@ -40,7 +41,7 @@ export const BoardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   ]);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<{ [key: number]: Comment[] }>({});
-
+  const { isLoggedIn, username } = useAuth();
   const handleCreatePost = (post: Omit<Post, 'id'>) => {
     const newPost: Post = {
       ...post,
@@ -91,7 +92,7 @@ export const BoardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const handleAddReply = (postId: number, parentId: number, content: string) => {
     const newReply: Comment = {
       id: Date.now(),
-      author: 'Current User', // 실제로는 현재 로그인한 사용자 정보를 사용
+      author: username,
       content,
       createdAt: new Date().toISOString(),
       parentId
@@ -99,15 +100,28 @@ export const BoardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setComments(prev => ({
       ...prev,
-      [postId]: [...(prev[postId] || []), newReply]
+      [postId]: prev[postId].map(comment => 
+        comment.id === parentId 
+          ? { ...comment, replies: [...(comment.replies || []), newReply] }
+          : comment
+      )
     }));
   };
 
   const handleEditReply = (postId: number, parentId: number, replyId: number, newContent: string) => {
     setComments(prev => ({
       ...prev,
-      [postId]: (prev[postId] || []).map(comment => 
-        comment.id === replyId ? { ...comment, content: newContent } : comment
+      [postId]: prev[postId].map(comment => 
+        comment.id === parentId
+          ? {
+              ...comment,
+              replies: comment.replies?.map(reply =>
+                reply.id === replyId
+                  ? { ...reply, content: newContent }
+                  : reply
+              )
+            }
+          : comment
       )
     }));
   };
@@ -115,7 +129,14 @@ export const BoardProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const handleDeleteReply = (postId: number, parentId: number, replyId: number) => {
     setComments(prev => ({
       ...prev,
-      [postId]: (prev[postId] || []).filter(comment => comment.id !== replyId)
+      [postId]: prev[postId].map(comment =>
+        comment.id === parentId
+          ? {
+              ...comment,
+              replies: comment.replies?.filter(reply => reply.id !== replyId)
+            }
+          : comment
+      )
     }));
   };
 
