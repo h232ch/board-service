@@ -1,12 +1,11 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, Container } from '@mui/material';
 import theme from './theme';
 import Header from './components/Header/Header';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { BoardProvider } from './contexts/BoardContext';
 import { AuthRoutes } from './routes/AuthRoutes';
 import { BoardRoutes } from './routes/BoardRoutes';
 
@@ -22,27 +21,23 @@ const AppContent: React.FC = () => {
         userInfo={userInfo}
       />
       <Container maxWidth={false} sx={{ maxWidth: 800, width: '100%', mx: 'auto', py: 4 }}>
-        <Routes>
-          <Route path="/*" element={isLoggedIn ? <BoardRoutes /> : <AuthRoutes />} />
-        </Routes>
+        {isLoggedIn ? <BoardRoutes /> : <AuthRoutes />}
       </Container>
     </Box>
   );
 };
 
-const App: React.FC = () => {
+function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
+      <BrowserRouter>
         <AuthProvider>
-          <BoardProvider>
-            <AppContent />
-          </BoardProvider>
+          <AppContent />
         </AuthProvider>
-      </Router>
+      </BrowserRouter>
     </ThemeProvider>
   );
-};
+}
 
 export default App;

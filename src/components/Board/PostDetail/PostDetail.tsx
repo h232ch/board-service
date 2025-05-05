@@ -19,7 +19,6 @@ interface PostDetailProps {
   onBack: () => void;
   onEdit: (post: Post) => void;
   onDelete: (postId: number) => void;
-  comments: CommentType[];
   onAddComment: (postId: number, comment: CommentType) => void;
   onDeleteComment: (postId: number, commentId: number) => void;
   onEditComment: (postId: number, commentId: number, newContent: string) => void;
@@ -34,7 +33,6 @@ const PostDetail: React.FC<PostDetailProps> = ({
   onBack, 
   onEdit, 
   onDelete, 
-  comments, 
   onAddComment, 
   onDeleteComment, 
   onEditComment, 
@@ -130,7 +128,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
           </Button>
         </Box>
         <CommentList 
-          comments={comments} 
+          comments={post.comments} 
           postId={post.id}
           onDeleteComment={onDeleteComment}
           onEditComment={onEditComment}

@@ -12,7 +12,7 @@ import {
 interface PostFormProps {
   initialData?: Post;
   username: string;
-  onSubmit: (postData: Omit<Post, 'id'>) => void;
+  onSubmit: (postData: Omit<Post, 'id' | 'comments'>) => void;
   onCancel: () => void;
 }
 

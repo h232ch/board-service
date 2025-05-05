@@ -4,7 +4,7 @@ import Login from '../components/Login/Login';
 import { useAuth } from '../contexts/AuthContext';
 
 export const AuthRoutes: React.FC = () => {
-  const { isLoggedIn, login } = useAuth();
+  const { login } = useAuth();
 
   const handleLogin = (username: string, password: string) => {
     const userInfo = {

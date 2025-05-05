@@ -9,13 +9,11 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Avatar,
-  Button
+  Avatar
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useNavigate } from 'react-router-dom';
-import App from '../../App';
 
 // Define the type for our props
 interface HeaderProps {
