@@ -12,8 +12,18 @@ const createPost = async (req, res) => {
     });
     await post.save();
     const populatedPost = await Post.findById(post._id)
-      .populate('author', 'username')
-      .populate('comments.author', 'username');
+      .populate({
+        path: 'author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      });
     res.status(201).json(populatedPost);
   } catch (error) {
     res.status(500).json({ message: 'Error creating post', error: error.message });
@@ -24,7 +34,18 @@ const createPost = async (req, res) => {
 const getPosts = async (req, res) => {
   try {
     const posts = await Post.find()
-      .populate('author', 'username')
+      .populate({
+        path: 'author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      })
       .sort({ createdAt: -1 });
     res.json(posts);
   } catch (error) {
@@ -36,8 +57,18 @@ const getPosts = async (req, res) => {
 const getPost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
-      .populate('author', 'username')
-      .populate('comments.author', 'username');
+      .populate({
+        path: 'author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      });
     
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
@@ -70,8 +101,18 @@ const updatePost = async (req, res) => {
 
     await post.save();
     const updatedPost = await Post.findById(post._id)
-      .populate('author', 'username')
-      .populate('comments.author', 'username');
+      .populate({
+        path: 'author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      });
     res.json(updatedPost);
   } catch (error) {
     res.status(500).json({ message: 'Error updating post', error: error.message });
@@ -116,9 +157,14 @@ const addComment = async (req, res) => {
 
     await post.save();
     const updatedPost = await Post.findById(post._id)
-      .populate('author', 'username')
-      .populate('comments.author', 'username')
-      .populate('comments.replies.author', 'username');
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      });
     res.json(updatedPost);
   } catch (error) {
     res.status(500).json({ message: 'Error adding comment', error: error.message });
@@ -149,9 +195,14 @@ const editComment = async (req, res) => {
     await post.save();
     
     const updatedPost = await Post.findById(post._id)
-      .populate('author', 'username')
-      .populate('comments.author', 'username')
-      .populate('comments.replies.author', 'username');
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      });
     res.json(updatedPost);
   } catch (error) {
     res.status(500).json({ message: 'Error editing comment', error: error.message });
@@ -181,9 +232,14 @@ const deleteComment = async (req, res) => {
     await post.save();
     
     const updatedPost = await Post.findById(post._id)
-      .populate('author', 'username')
-      .populate('comments.author', 'username')
-      .populate('comments.replies.author', 'username');
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      });
     res.json(updatedPost);
   } catch (error) {
     res.status(500).json({ message: 'Error deleting comment', error: error.message });
@@ -212,9 +268,18 @@ const likePost = async (req, res) => {
     await post.save();
     
     const updatedPost = await Post.findById(req.params.id)
-      .populate('author', 'username')
-      .populate('comments.author', 'username')
-      .populate('comments.replies.author', 'username');
+      .populate({
+        path: 'author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      });
 
     res.json(updatedPost);
   } catch (error) {
@@ -244,9 +309,14 @@ const addReply = async (req, res) => {
 
     await post.save();
     const updatedPost = await Post.findById(post._id)
-      .populate('author', 'username')
-      .populate('comments.author', 'username')
-      .populate('comments.replies.author', 'username');
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      });
     res.json(updatedPost);
   } catch (error) {
     res.status(500).json({ message: 'Error adding reply', error: error.message });
@@ -282,9 +352,14 @@ const editReply = async (req, res) => {
     await post.save();
     
     const updatedPost = await Post.findById(post._id)
-      .populate('author', 'username')
-      .populate('comments.author', 'username')
-      .populate('comments.replies.author', 'username');
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      });
     res.json(updatedPost);
   } catch (error) {
     res.status(500).json({ message: 'Error editing reply', error: error.message });
@@ -319,9 +394,14 @@ const deleteReply = async (req, res) => {
     await post.save();
     
     const updatedPost = await Post.findById(post._id)
-      .populate('author', 'username')
-      .populate('comments.author', 'username')
-      .populate('comments.replies.author', 'username');
+      .populate({
+        path: 'comments.author',
+        select: 'username'
+      })
+      .populate({
+        path: 'comments.replies.author',
+        select: 'username'
+      });
     res.json(updatedPost);
   } catch (error) {
     res.status(500).json({ message: 'Error deleting reply', error: error.message });

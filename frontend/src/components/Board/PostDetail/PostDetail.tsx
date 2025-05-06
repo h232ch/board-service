@@ -133,7 +133,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
                 </ListItemIcon>
                 <ListItemText>Back</ListItemText>
               </MenuItem>
-              {isPostAuthor ? [
+              {isPostAuthor && [
                 <MenuItem key="edit" onClick={handleEdit}>
                   <ListItemIcon>
                     <Edit fontSize="small" sx={{ color: '#2C3E50' }} />
@@ -146,7 +146,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
                   </ListItemIcon>
                   <ListItemText sx={{ color: '#E74C3C' }}>Delete</ListItemText>
                 </MenuItem>
-              ] : null}
+              ]}
             </Menu>
           </Box>
           <Box 

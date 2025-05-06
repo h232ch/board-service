@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User } from '../../types/User';
+import { User } from '../../types/api';
 import Profile from '../Profile/Profile';
 import { 
   AppBar, 

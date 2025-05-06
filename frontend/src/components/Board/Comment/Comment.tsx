@@ -43,7 +43,7 @@ const Comment: React.FC<CommentProps> = ({
 
   const getAuthorName = (author: User | string) => {
     if (typeof author === 'string') {
-      return username;  // ID 대신 현재 사용자의 username을 표시
+      return author;  // ID를 그대로 표시
     }
     return author.username;
   };

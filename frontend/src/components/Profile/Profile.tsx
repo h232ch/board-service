@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { format, isValid } from 'date-fns';
-import { User } from '../../types/User';
+import { User } from '../../types/api';
 
 interface ProfileProps {
   user: User;
