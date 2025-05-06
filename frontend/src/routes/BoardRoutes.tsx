@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Box, Container } from '@mui/material';
 import Header from '../components/Header/Header';
@@ -12,22 +12,29 @@ import commentService from '../services/commentService';
 
 export const BoardRoutes: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const response = await api.get<Post[]>('/posts');
       setPosts(response.data);
     } catch (error) {
       console.error('Failed to fetch posts:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (location.pathname === '/board') {
+      fetchPosts();
+    }
+  }, [location.key, fetchPosts]);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
   const handlePostClick = (post: Post) => {
     setSelectedPost(post);
@@ -210,6 +217,7 @@ export const BoardRoutes: React.FC = () => {
             <PostList 
               posts={posts}
               onPostClick={handlePostClick}
+              refresh={fetchPosts}
             />
           } />
           <Route path="/board/:postId" element={

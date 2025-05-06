@@ -101,7 +101,13 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, username, onLogout, userInf
           <Typography
             variant="h6" 
             component="div" 
-            sx={{ flexGrow: 1 }}>Board Service
+            sx={{ 
+              flexGrow: 1,
+              cursor: 'pointer'
+            }}
+            onClick={() => navigate('/board')}
+          >
+            Board Service
           </Typography>
           {isLoggedIn && userInfo && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

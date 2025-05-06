@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Post, CreatePostRequest, CreateCommentRequest } from '../types/api';
 import { postService, commentService } from '../services';
+import { useLocation } from 'react-router-dom';
 
 interface BoardContainerProps {
   children: (props: {
@@ -16,16 +17,21 @@ interface BoardContainerProps {
     handleAddReply: (postId: string, commentId: string, content: string) => Promise<void>;
     handleEditReply: (postId: string, commentId: string, replyId: string, content: string) => Promise<void>;
     handleDeleteReply: (postId: string, commentId: string, replyId: string) => Promise<void>;
+    refresh: () => Promise<void>;
   }) => React.ReactNode;
 }
 
 export const BoardContainer: React.FC<BoardContainerProps> = ({ children }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const location = useLocation();
 
+  // board 페이지 접속 시 데이터 새로 가져오기
   useEffect(() => {
+    if (location.pathname === '/board') {
     loadPosts();
-  }, []);
+    }
+  }, [location.pathname]);
 
   const loadPosts = async () => {
     try {
@@ -166,7 +172,8 @@ export const BoardContainer: React.FC<BoardContainerProps> = ({ children }) => {
         handleEditComment,
         handleAddReply,
         handleEditReply,
-        handleDeleteReply
+        handleDeleteReply,
+        refresh: loadPosts
       })}
     </>
   );

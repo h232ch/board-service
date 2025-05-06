@@ -226,7 +226,8 @@ const PostDetail: React.FC<PostDetailProps> = ({
                   transform: 'scale(1.1)',
                   transition: 'transform 0.2s',
                   color: 'error.main'
-                }
+                },
+                pl: 0
               }}
             >
               {isLiked ? <Favorite /> : <FavoriteBorder />}

@@ -5,24 +5,29 @@ import {
   Button, 
   Stack,
   Box,
-  Pagination
+  Pagination,
+  CircularProgress,
+  Typography
 } from '@mui/material';
 import { Post } from '../../../types/api';
 import PostCard from './PostCard';
 import PostCountIndicator from './PostCountIndicator';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { usePullToRefresh } from '../../../hooks/usePullToRefresh';
 
 interface PostListProps {
   posts: Post[];
   onPostClick: (post: Post) => void;
+  refresh: () => Promise<void>;
 }
 
-const POSTS_PER_PAGE = 3;
+const POSTS_PER_PAGE = 7;
 
-const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
+const PostList: React.FC<PostListProps> = ({ posts, onPostClick, refresh }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { isRefreshing, pullDistance, threshold } = usePullToRefresh({ onRefresh: refresh });
 
   // Get page from URL or default to 1
   const page = parseInt(searchParams.get('page') || '1', 10);
@@ -46,107 +51,149 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
   useEffect(() => {
     if (searchTerm) {
       setSearchParams({ page: '1' });
-  }
+    }
   }, [searchTerm, setSearchParams]);
 
   return (
     <Container maxWidth="lg" sx={{ p: { xs: 0, sm: 1 } }}>
-      <Stack spacing={2}>
-        <Stack 
-          direction="row" 
-          spacing={2} 
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ width: '100%' }}
-        >
-          <Box sx={{ flex: { xs: 1, sm: 2 } }}>
-        <TextField
-              label="Search posts"
-              variant="outlined"
-          value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              size="small"
-              fullWidth
-              sx={{ 
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '8px',
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'primary.main',
-                  }
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: { xs: '0.875rem', sm: '1rem' }
-                },
-                '& .MuiInputBase-input': {
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  py: { xs: 1, sm: 1.5 }
-                }
+      <Box
+        sx={{
+          position: 'relative',
+          transform: `translateY(${Math.min(pullDistance, threshold)}px)`,
+          transition: isRefreshing ? 'none' : 'transform 0.2s ease-out'
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -60,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 1,
+            opacity: pullDistance > 0 ? Math.min(pullDistance / threshold, 1) : 0,
+            transition: 'opacity 0.2s ease-out'
           }}
-        />
-          </Box>
-        <Button 
-          variant="contained" 
-          color="primary" 
-            onClick={() => navigate('/board/new')}
-            size="small"
-            sx={{
-              borderRadius: '8px',
-              textTransform: 'none',
-              px: { xs: 2, sm: 3 },
-              py: { xs: 0.75, sm: 1 },
-              fontSize: { xs: '0.875rem', sm: '1rem' },
-              boxShadow: 'none',
-              whiteSpace: 'nowrap',
-              bgcolor: '#2C3E50',
-              '&:hover': {
-                bgcolor: '#34495E',
-                boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-              }
-            }}
         >
-          Create New Post
-        </Button>
-        </Stack>
-      <PostCountIndicator
-          total={filteredPosts.length} 
-          current={paginatedPosts.length} 
-          page={page}
-      />
+          <CircularProgress 
+            size={24} 
+            sx={{ 
+              color: '#2C3E50',
+              transform: isRefreshing ? 'none' : `rotate(${Math.min(pullDistance / threshold * 360, 360)}deg)`,
+              transition: isRefreshing ? 'none' : 'transform 0.2s ease-out'
+            }} 
+          />
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#2C3E50',
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }}
+          >
+            {isRefreshing ? '새로고침 중...' : '아래로 당겨서 새로고침'}
+          </Typography>
+        </Box>
         <Stack spacing={2}>
-      {paginatedPosts.map(post => (
-            <PostCard 
-          key={post._id}
-              post={post} 
-          onClick={() => onPostClick(post)}
-            />
-          ))}
-        </Stack>
-      {totalPages > 1 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
+          <Stack 
+            direction="row" 
+            spacing={2} 
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ width: '100%' }}
+          >
+            <Box sx={{ flex: { xs: 1, sm: 2 } }}>
+              <TextField
+                label="Search posts"
+                variant="outlined"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                size="small"
+                fullWidth
+                sx={{ 
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '8px',
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'primary.main',
+                    }
+                  },
+                  '& .MuiInputLabel-root': {
+                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                  },
+                  '& .MuiInputBase-input': {
+                    fontSize: { xs: '0.875rem', sm: '1rem' },
+                    py: { xs: 1, sm: 1.5 }
+                  }
+                }}
+              />
+            </Box>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={() => navigate('/board/new')}
+              size="small"
               sx={{
-                '& .MuiPaginationItem-root': {
-                  color: '#2C3E50',
-                  '&.Mui-selected': {
-                    backgroundColor: '#2C3E50',
-                    color: 'white',
+                borderRadius: '8px',
+                textTransform: 'none',
+                px: { xs: 2, sm: 3 },
+                py: { xs: 0.75, sm: 1 },
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                boxShadow: 'none',
+                whiteSpace: 'nowrap',
+                bgcolor: '#2C3E50',
+                '&:hover': {
+                  bgcolor: '#34495E',
+                  boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+                }
+              }}
+            >
+              Create New Post
+            </Button>
+          </Stack>
+          <PostCountIndicator
+            total={filteredPosts.length} 
+            current={paginatedPosts.length} 
+            page={page}
+          />
+          <Stack spacing={2}>
+            {paginatedPosts.map(post => (
+              <PostCard 
+                key={post._id}
+                post={post} 
+                onClick={() => onPostClick(post)}
+              />
+            ))}
+          </Stack>
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    color: '#2C3E50',
+                    '&.Mui-selected': {
+                      backgroundColor: '#2C3E50',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: '#34495E',
+                      },
+                    },
                     '&:hover': {
-                      backgroundColor: '#34495E',
+                      backgroundColor: 'rgba(44, 62, 80, 0.04)',
                     },
                   },
-                  '&:hover': {
-                    backgroundColor: 'rgba(44, 62, 80, 0.04)',
-                  },
-                },
-              }}
-          />
-        </Box>
-      )}
-      </Stack>
+                }}
+              />
+            </Box>
+          )}
+        </Stack>
+      </Box>
     </Container>
   );
 };
