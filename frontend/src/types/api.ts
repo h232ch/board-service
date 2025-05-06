@@ -4,6 +4,7 @@ export interface User {
   email: string;
   createdAt: string;
   updatedAt: string;
+  lastLoginAt: string;
 }
 
 export interface AuthResponse {

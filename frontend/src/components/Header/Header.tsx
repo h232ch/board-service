@@ -114,7 +114,12 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, username, onLogout, userInf
                 color="inherit"
                 onClick={handleMenu}
               >
-                <Avatar sx={{ width: 32, height: 32 }}>
+                <Avatar sx={{ 
+                  width: 32, 
+                  height: 32,
+                  bgcolor: '#2C3E50',
+                  color: 'white'
+                }}>
                   {username.charAt(0).toUpperCase()}
                 </Avatar>
               </IconButton>
@@ -164,14 +169,14 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, username, onLogout, userInf
               >
                 <MenuItem onClick={handleProfile}>
                   <ListItemIcon>
-                    <Person fontSize="small" />
+                    <Person fontSize="small" sx={{ color: '#2C3E50' }} />
                   </ListItemIcon>
                   <ListItemText>Profile</ListItemText>
                 </MenuItem>
                 <Divider />
                 <MenuItem onClick={handleLogout}>
                   <ListItemIcon>
-                    <Logout fontSize="small" />
+                    <Logout fontSize="small" sx={{ color: '#2C3E50' }} />
                   </ListItemIcon>
                   <ListItemText>Logout</ListItemText>
                 </MenuItem>

@@ -20,6 +20,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 6
+  },
+  lastLoginAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true

@@ -32,9 +32,10 @@ npm install
 
 3. Create a `.env` file in the backend directory with the following variables:
 ```env
-PORT=5000
+PORT=8080
 MONGODB_URI=mongodb://localhost:27017/board-service
 JWT_SECRET=your_jwt_secret_key
+FRONTEND_URL=http://localhost:3000
 ```
 
 ### Frontend Setup
@@ -51,7 +52,7 @@ npm install
 
 3. Create a `.env` file in the frontend directory with the following variables:
 ```env
-REACT_APP_API_URL=http://localhost:5000
+REACT_APP_API_URL=http://localhost:8080/api
 ```
 
 ## Running the Application
@@ -68,7 +69,7 @@ cd backend
 npm run dev
 ```
 
-The backend server will start running on http://localhost:5000
+The backend server will start running on http://localhost:8080
 
 ### Start Frontend Development Server
 
@@ -83,6 +84,18 @@ npm start
 ```
 
 The frontend application will start running on http://localhost:3000
+
+## Cross-Origin Resource Sharing (CORS)
+
+To allow the frontend to communicate with the backend from different devices:
+
+1. In the backend `.env` file, set `FRONTEND_URL` to your frontend's URL:
+   - For local development: `FRONTEND_URL=http://localhost:3000`
+   - For production: `FRONTEND_URL=https://your-domain.com`
+
+2. In the frontend `.env` file, set `REACT_APP_API_URL` to your backend's URL:
+   - For local development: `REACT_APP_API_URL=http://localhost:8080/api`
+   - For production: `REACT_APP_API_URL=https://your-api-domain.com/api`
 
 ## Features
 

@@ -22,14 +22,29 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
         }
       }}
     >
-      <CardContent>
-        <Typography variant="h6" component="div" gutterBottom>
+      <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+        <Typography 
+          variant="h6" 
+          component="div" 
+          gutterBottom
+          sx={{ 
+            fontSize: { xs: '1rem', sm: '1.25rem' },
+            mb: 1
+          }}
+        >
           {post.title}
         </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          sx={{ 
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            mb: 1
+          }}
+        >
           {post.content.length > 100 ? `${post.content.substring(0, 100)}...` : post.content}
         </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Chip 
               label={`${post.comments.length} comments`} 

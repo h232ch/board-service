@@ -94,6 +94,13 @@ const Profile: React.FC<ProfileProps> = ({ user, onClose }) => {
           <Divider />
           <ListItem>
             <ListItemText 
+              primary="Last Login"
+              secondary={formatDate(user.lastLoginAt)}
+            />
+          </ListItem>
+          <Divider />
+          <ListItem>
+            <ListItemText 
               primary="Last Updated"
               secondary={formatDate(user.updatedAt)}
             />

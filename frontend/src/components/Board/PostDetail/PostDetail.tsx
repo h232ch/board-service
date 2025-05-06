@@ -3,22 +3,22 @@ import {
   Box, 
   Typography, 
   Button, 
-  Paper, 
-  TextField, 
-  Divider,
   Container,
-  Stack,
-  Chip,
+  Divider,
   IconButton,
   Menu,
   MenuItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Chip,
+  TextField
 } from '@mui/material';
 import { Post, CreateCommentRequest, User } from '../../../types/api';
 import { format } from 'date-fns';
 import Comment from '../Comment/Comment';
 import { Favorite, FavoriteBorder, MoreVert, ArrowBack, Edit, Delete } from '@mui/icons-material';
+import { useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 interface PostDetailProps {
   post: Post;
@@ -52,6 +52,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
   const [newComment, setNewComment] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isPostAuthor = post.author?._id === currentUser._id;
+  const theme = useTheme();
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -91,8 +92,18 @@ const PostDetail: React.FC<PostDetailProps> = ({
   const isLiked = currentUser ? post.likes.includes(currentUser._id) : false;
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Paper elevation={3} sx={{ p: { xs: 2, sm: 3 }, mb: 4 }}>
+    <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 } }}>
+      <Box 
+        sx={{ 
+          p: { xs: 0, sm: 3 }, 
+          mb: 4,
+          ...(useMediaQuery(theme.breakpoints.up('sm')) && {
+            bgcolor: 'background.paper',
+            borderRadius: 1,
+            boxShadow: 3
+          })
+        }}
+      >
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography 
@@ -103,8 +114,8 @@ const PostDetail: React.FC<PostDetailProps> = ({
                 wordBreak: 'break-word'
               }}
             >
-              {post.title}
-            </Typography>
+            {post.title}
+          </Typography>
             <IconButton
               onClick={handleMenuOpen}
               sx={{
@@ -174,7 +185,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
               }}
             >
               {format(new Date(post.createdAt), 'PPP p')}
-            </Typography>
+          </Typography>
           </Box>
           <Box sx={{ mb: 2 }}>
             {post.tags.map((tag, index) => (
@@ -195,8 +206,8 @@ const PostDetail: React.FC<PostDetailProps> = ({
               wordBreak: 'break-word'
             }}
           >
-            {post.content}
-          </Typography>
+          {post.content}
+        </Typography>
           <Box 
             sx={{ 
               display: 'flex', 
@@ -293,7 +304,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
             onEditReply={(commentId, replyId, content) => onEditReply(post._id, commentId, replyId, content)}
           />
         ))}
-      </Paper>
+    </Box>
     </Container>
   );
 };

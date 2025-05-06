@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Paper } from '@mui/material';
+import { Box, TextField, Button, Typography } from '@mui/material';
 import { Post, CreatePostRequest } from '../../../types/api';
 
 interface PostFormProps {
@@ -29,7 +29,14 @@ const PostForm: React.FC<PostFormProps> = ({ initialData, onSubmit, onCancel }) 
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
+      <Box 
+        sx={{ 
+          p: { xs: 2, sm: 4 },
+          borderRadius: { xs: 0, sm: 2 },
+          bgcolor: 'background.paper',
+          boxShadow: { xs: 'none', sm: '0 8px 32px rgba(0,0,0,0.1)' }
+        }}
+      >
         <Typography variant="h5" component="h1" gutterBottom>
           {initialData ? 'Edit Post' : 'Create Post'}
         </Typography>
@@ -105,7 +112,7 @@ const PostForm: React.FC<PostFormProps> = ({ initialData, onSubmit, onCancel }) 
             </Button>
           </Box>
         </form>
-      </Paper>
+      </Box>
     </Box>
   );
 };

@@ -54,6 +54,10 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Update lastLoginAt
+    user.lastLoginAt = new Date();
+    await user.save();
+
     // Generate token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d'
@@ -67,7 +71,8 @@ const login = async (req, res) => {
         username: user.username,
         email: user.email,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
+        lastLoginAt: user.lastLoginAt
       }
     });
   } catch (error) {
@@ -85,7 +90,8 @@ const getProfile = async (req, res) => {
         username: user.username,
         email: user.email,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
+        lastLoginAt: user.lastLoginAt
       }
     });
   } catch (error) {

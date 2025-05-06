@@ -17,7 +17,7 @@ interface PostListProps {
   onPostClick: (post: Post) => void;
 }
 
-const POSTS_PER_PAGE = 5;
+const POSTS_PER_PAGE = 3;
 
 const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,52 +39,62 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 1 }}>
       <Stack spacing={2}>
         <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
+          direction="row" 
           spacing={2} 
-          alignItems={{ xs: 'stretch', sm: 'center' }}
-          justifyContent={{ sm: 'space-between' }}
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ width: '100%' }}
         >
-        <TextField
-            label="Search posts"
-            variant="outlined"
-          value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            fullWidth
-            sx={{ 
-              maxWidth: { sm: '400px' },
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '8px',
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'primary.main',
+          <Box sx={{ flex: { xs: 1, sm: 2 } }}>
+            <TextField
+              label="Search posts"
+              variant="outlined"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="small"
+              fullWidth
+              sx={{ 
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '8px',
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'primary.main',
+                  }
+                },
+                '& .MuiInputLabel-root': {
+                  fontSize: { xs: '0.875rem', sm: '1rem' }
+                },
+                '& .MuiInputBase-input': {
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  py: { xs: 1, sm: 1.5 }
                 }
-              }
-          }}
-        />
-        <Button 
-          variant="contained" 
-          color="primary" 
+              }}
+            />
+          </Box>
+          <Button 
+            variant="contained" 
+            color="primary" 
             onClick={() => navigate('/board/new')}
+            size="small"
             sx={{
               borderRadius: '8px',
               textTransform: 'none',
-              px: 3,
-              py: 2,
+              px: { xs: 2, sm: 3 },
+              py: { xs: 0.75, sm: 1 },
+              fontSize: { xs: '0.875rem', sm: '1rem' },
               boxShadow: 'none',
-              minWidth: { xs: '100%', sm: 'auto' },
               whiteSpace: 'nowrap',
-              ml: { sm: 'auto' },
               bgcolor: '#2C3E50',
               '&:hover': {
                 bgcolor: '#34495E',
                 boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
               }
             }}
-        >
-          Create New Post
-        </Button>
+          >
+            Create New Post
+          </Button>
         </Stack>
       <PostCountIndicator
           total={filteredPosts.length} 
