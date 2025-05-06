@@ -4,12 +4,11 @@ import {
   CardContent, 
   Typography, 
   Box, 
-  Chip,
   Stack
 } from '@mui/material';
 import { Post } from '../../../types/api';
 import { format } from 'date-fns';
-import { Favorite, FavoriteBorder, ChatBubbleOutline } from '@mui/icons-material';
+import { Favorite, FavoriteBorder } from '@mui/icons-material';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 

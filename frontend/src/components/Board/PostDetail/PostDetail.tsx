@@ -8,7 +8,6 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  ListItemIcon,
   ListItemText,
   Chip,
   TextField,
@@ -17,7 +16,7 @@ import {
 import { Post, CreateCommentRequest, User } from '../../../types/api';
 import { format } from 'date-fns';
 import Comment from '../Comment/Comment';
-import { Favorite, FavoriteBorder, MoreVert, ArrowBack, Edit, Delete, ChatBubbleOutline } from '@mui/icons-material';
+import { Favorite, FavoriteBorder, MoreVert } from '@mui/icons-material';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { usePullToRefresh } from '../../../hooks/usePullToRefresh';
