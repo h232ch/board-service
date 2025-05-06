@@ -187,7 +187,7 @@ const Register: React.FC<RegisterProps> = ({ onSubmit }) => {
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                required
+            required
                 autoComplete="new-password"
                 error={formData.confirmPassword !== '' && formData.password !== formData.confirmPassword}
                 helperText={formData.confirmPassword !== '' && formData.password !== formData.confirmPassword ? 'Passwords do not match' : ''}

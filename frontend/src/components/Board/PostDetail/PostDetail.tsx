@@ -92,7 +92,9 @@ const PostDetail: React.FC<PostDetailProps> = ({
   const isLiked = currentUser ? post.likes.includes(currentUser._id) : false;
 
   return (
-    <Container maxWidth="md" sx={{ p: { xs: 0, sm: 4 } }}>
+    <Container maxWidth="lg" sx={{ 
+      p: { xs: 0, sm: 1 }
+    }}>
       <Box 
         sx={{ 
           p: { xs: 0, sm: 3 }, 

@@ -46,7 +46,7 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
   useEffect(() => {
     if (searchTerm) {
       setSearchParams({ page: '1' });
-    }
+  }
   }, [searchTerm, setSearchParams]);
 
   return (
@@ -60,10 +60,10 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
           sx={{ width: '100%' }}
         >
           <Box sx={{ flex: { xs: 1, sm: 2 } }}>
-            <TextField
+        <TextField
               label="Search posts"
               variant="outlined"
-              value={searchTerm}
+          value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               size="small"
               fullWidth
@@ -81,12 +81,12 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
                   fontSize: { xs: '0.875rem', sm: '1rem' },
                   py: { xs: 1, sm: 1.5 }
                 }
-              }}
-            />
+          }}
+        />
           </Box>
-          <Button 
-            variant="contained" 
-            color="primary" 
+        <Button 
+          variant="contained" 
+          color="primary" 
             onClick={() => navigate('/board/new')}
             size="small"
             sx={{
@@ -103,31 +103,31 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
                 boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
               }
             }}
-          >
-            Create New Post
-          </Button>
+        >
+          Create New Post
+        </Button>
         </Stack>
-        <PostCountIndicator
+      <PostCountIndicator
           total={filteredPosts.length} 
           current={paginatedPosts.length} 
           page={page}
-        />
+      />
         <Stack spacing={2}>
-          {paginatedPosts.map(post => (
+      {paginatedPosts.map(post => (
             <PostCard 
-              key={post._id}
+          key={post._id}
               post={post} 
-              onClick={() => onPostClick(post)}
+          onClick={() => onPostClick(post)}
             />
           ))}
         </Stack>
-        {totalPages > 1 && (
+      {totalPages > 1 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={handlePageChange}
+            color="primary"
               sx={{
                 '& .MuiPaginationItem-root': {
                   color: '#2C3E50',
@@ -143,9 +143,9 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
                   },
                 },
               }}
-            />
-          </Box>
-        )}
+          />
+        </Box>
+      )}
       </Stack>
     </Container>
   );
