@@ -1,46 +1,143 @@
-# Getting Started with Create React App
+# Board Service
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack bulletin board application built with React, TypeScript, and Node.js.
 
-## Available Scripts
+## Prerequisites
 
-In the project directory, you can run:
+- Node.js (v14 or higher)
+- npm (v6 or higher)
+- MongoDB (v4.4 or higher)
 
-### `npm start`
+## Project Structure
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```
+board-service/
+├── frontend/          # React frontend application
+└── backend/           # Node.js backend server
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Installation
 
-### `npm test`
+### Backend Setup
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Navigate to the backend directory:
+```bash
+cd backend
+```
 
-### `npm run build`
+2. Install dependencies:
+```bash
+npm install
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. Create a `.env` file in the backend directory with the following variables:
+```env
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/board-service
+JWT_SECRET=your_jwt_secret_key
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Frontend Setup
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. Navigate to the frontend directory:
+```bash
+cd frontend
+```
 
-### `npm run eject`
+2. Install dependencies:
+```bash
+npm install
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+3. Create a `.env` file in the frontend directory with the following variables:
+```env
+REACT_APP_API_URL=http://localhost:5000
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Running the Application
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Start Backend Server
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+1. Navigate to the backend directory:
+```bash
+cd backend
+```
 
-## Learn More
+2. Start the development server:
+```bash
+npm run dev
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+The backend server will start running on http://localhost:5000
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Start Frontend Development Server
+
+1. Navigate to the frontend directory:
+```bash
+cd frontend
+```
+
+2. Start the development server:
+```bash
+npm start
+```
+
+The frontend application will start running on http://localhost:3000
+
+## Features
+
+- User authentication (Sign up, Login, Logout)
+- Create, read, update, and delete posts
+- Comment system with nested replies
+- Like posts
+- Search functionality
+- Responsive design for mobile and desktop
+- Pagination
+
+## API Endpoints
+
+### Authentication
+- POST /api/auth/signup - Register a new user
+- POST /api/auth/login - Login user
+- GET /api/auth/me - Get current user info
+
+### Posts
+- GET /api/posts - Get all posts
+- POST /api/posts - Create a new post
+- GET /api/posts/:id - Get a specific post
+- PUT /api/posts/:id - Update a post
+- DELETE /api/posts/:id - Delete a post
+- POST /api/posts/:id/like - Like a post
+
+### Comments
+- POST /api/posts/:postId/comments - Add a comment
+- PUT /api/posts/:postId/comments/:commentId - Update a comment
+- DELETE /api/posts/:postId/comments/:commentId - Delete a comment
+- POST /api/posts/:postId/comments/:commentId/replies - Add a reply
+- PUT /api/posts/:postId/comments/:commentId/replies/:replyId - Update a reply
+- DELETE /api/posts/:postId/comments/:commentId/replies/:replyId - Delete a reply
+
+## Technologies Used
+
+### Frontend
+- React
+- TypeScript
+- Material-UI
+- React Router
+- Axios
+
+### Backend
+- Node.js
+- Express
+- MongoDB
+- Mongoose
+- JWT Authentication
+- bcrypt
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request 
