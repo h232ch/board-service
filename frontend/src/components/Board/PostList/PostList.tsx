@@ -94,7 +94,7 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick, refresh }) => {
               fontWeight: 500
             }}
           >
-            {isRefreshing ? '새로고침 중...' : '아래로 당겨서 새로고침'}
+            {isRefreshing ? 'Refreshing...' : 'Pull to refresh'}
           </Typography>
         </Box>
         <Stack spacing={2}>
