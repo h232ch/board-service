@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Box, Container } from '@mui/material';
 import Header from '../components/Header/Header';
@@ -12,7 +12,6 @@ import commentService from '../services/commentService';
 
 export const BoardRoutes: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, logout } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -26,15 +25,22 @@ export const BoardRoutes: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (location.pathname === '/board') {
-      fetchPosts();
+  const updateSelectedPost = useCallback((posts: Post[]) => {
+    if (selectedPost) {
+      const updatedPost = posts.find(post => post._id === selectedPost._id);
+      if (updatedPost) {
+        setSelectedPost(updatedPost);
+      }
     }
-  }, [location.key, fetchPosts]);
+  }, [selectedPost]);
 
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  useEffect(() => {
+    updateSelectedPost(posts);
+  }, [posts, updateSelectedPost]);
 
   const handlePostClick = (post: Post) => {
     setSelectedPost(post);
@@ -235,6 +241,7 @@ export const BoardRoutes: React.FC = () => {
                 onDeleteReply={(postId: string, commentId: string, replyId: string) => handleDeleteReply(postId, commentId, replyId)}
                 onEditReply={(postId: string, commentId: string, replyId: string, content: string) => handleEditReply(postId, commentId, replyId, content)}
                 onLike={handleLike}
+                refresh={fetchPosts}
               />
             ) : (
               <Navigate to="/board" />

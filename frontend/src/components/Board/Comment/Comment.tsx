@@ -93,10 +93,11 @@ const Comment: React.FC<CommentProps> = ({
           sx={{ 
             display: 'flex', 
             justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: 'center',
+            flexDirection: { xs: 'row', sm: 'row' },
             gap: 1,
-            mb: 1
+            mb: 1,
+            flexWrap: 'wrap'
           }}
         >
           <Box sx={{ 
@@ -125,32 +126,30 @@ const Comment: React.FC<CommentProps> = ({
           <Stack 
             direction="row" 
             spacing={1}
-            sx={{ 
-              alignSelf: { xs: 'flex-end', sm: 'flex-start' }
-            }}
           >
+            <Button 
+              variant="contained" 
+              size="small" 
+              onClick={() => setIsReplying(!isReplying)}
+              sx={{
+                borderRadius: '8px',
+                textTransform: 'none',
+                px: { xs: 0.5, sm: 2 },
+                py: { xs: 0.25, sm: 0.5 },
+                minWidth: { xs: 'auto', sm: '64px' },
+                fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                boxShadow: 'none',
+                bgcolor: '#2C3E50',
+                '&:hover': {
+                  bgcolor: '#34495E',
+                  boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+                }
+              }}
+            >
+              Reply
+            </Button>
             {isAuthor(comment.author) && (
               <>
-                <Button 
-                  variant="contained" 
-                  size="small" 
-                  onClick={() => setIsReplying(!isReplying)}
-                  sx={{
-                    borderRadius: '8px',
-                    textTransform: 'none',
-                    px: { xs: 1, sm: 2 },
-                    py: { xs: 0.25, sm: 0.5 },
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    boxShadow: 'none',
-                    bgcolor: '#2C3E50',
-                    '&:hover': {
-                      bgcolor: '#34495E',
-                      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-                    }
-                  }}
-                >
-                  Reply
-                </Button>
                 <Button 
                   variant="outlined" 
                   size="small" 
@@ -158,9 +157,10 @@ const Comment: React.FC<CommentProps> = ({
                   sx={{
                     borderRadius: '8px',
                     textTransform: 'none',
-                    px: { xs: 1, sm: 2 },
+                    px: { xs: 0.5, sm: 2 },
                     py: { xs: 0.25, sm: 0.5 },
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    minWidth: { xs: 'auto', sm: '64px' },
+                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
                     borderColor: '#2C3E50',
                     color: '#2C3E50',
                     '&:hover': {
@@ -178,9 +178,10 @@ const Comment: React.FC<CommentProps> = ({
                   sx={{
                     borderRadius: '8px',
                     textTransform: 'none',
-                    px: { xs: 1, sm: 2 },
+                    px: { xs: 0.5, sm: 2 },
                     py: { xs: 0.25, sm: 0.5 },
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    minWidth: { xs: 'auto', sm: '64px' },
+                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
                     borderColor: '#E74C3C',
                     color: '#E74C3C',
                     '&:hover': {
@@ -358,10 +359,11 @@ const Comment: React.FC<CommentProps> = ({
                   sx={{ 
                     display: 'flex', 
                     justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: 'center',
+                    flexDirection: { xs: 'row', sm: 'row' },
                     gap: 1,
-                    mb: 1
+                    mb: 1,
+                    flexWrap: 'wrap'
                   }}
                 >
                   <Box sx={{ 
@@ -391,9 +393,6 @@ const Comment: React.FC<CommentProps> = ({
                     <Stack 
                       direction="row" 
                       spacing={1}
-                      sx={{ 
-                        alignSelf: { xs: 'flex-end', sm: 'flex-start' }
-                      }}
                     >
                       <Button 
                         variant="outlined" 
@@ -405,9 +404,10 @@ const Comment: React.FC<CommentProps> = ({
                         sx={{
                           borderRadius: '8px',
                           textTransform: 'none',
-                          px: { xs: 1, sm: 2 },
+                          px: { xs: 0.5, sm: 2 },
                           py: { xs: 0.25, sm: 0.5 },
-                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          minWidth: { xs: 'auto', sm: '64px' },
+                          fontSize: { xs: '0.7rem', sm: '0.875rem' },
                           borderColor: '#2C3E50',
                           color: '#2C3E50',
                           '&:hover': {
@@ -426,9 +426,10 @@ const Comment: React.FC<CommentProps> = ({
                         sx={{
                           borderRadius: '8px',
                           textTransform: 'none',
-                          px: { xs: 1, sm: 2 },
+                          px: { xs: 0.5, sm: 2 },
                           py: { xs: 0.25, sm: 0.5 },
-                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          minWidth: { xs: 'auto', sm: '64px' },
+                          fontSize: { xs: '0.7rem', sm: '0.875rem' },
                           borderColor: 'rgba(211, 47, 47, 0.5)',
                           '&:hover': {
                             borderColor: 'error.main',
