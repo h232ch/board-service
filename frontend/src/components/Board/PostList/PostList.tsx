@@ -50,7 +50,7 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
   }, [searchTerm, setSearchParams]);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 1 }}>
+    <Container maxWidth="lg" sx={{ p: { xs: 0, sm: 1 } }}>
       <Stack spacing={2}>
         <Stack 
           direction="row" 
