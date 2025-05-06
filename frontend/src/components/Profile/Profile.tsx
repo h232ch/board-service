@@ -26,7 +26,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onClose }) => {
     try {
       const date = new Date(dateString);
       if (isValid(date)) {
-        return format(date, 'MMMM d, yyyy h:mm a');
+        return format(date, 'PPP HH:mm:ss');
       }
       return 'N/A';
     } catch (error) {

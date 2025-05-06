@@ -116,11 +116,9 @@ const Comment: React.FC<CommentProps> = ({
             <Typography 
               variant="caption" 
               color="text.secondary"
-              sx={{ 
-                fontSize: { xs: '0.75rem', sm: '0.875rem' }
-              }}
+              sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}
             >
-              {format(new Date(comment.createdAt), 'PPP p')}
+              {format(new Date(comment.createdAt), 'PPP HH:mm:ss')}
             </Typography>
           </Box>
           <Stack 
@@ -382,11 +380,9 @@ const Comment: React.FC<CommentProps> = ({
                     <Typography 
                       variant="caption" 
                       color="text.secondary"
-                      sx={{ 
-                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                      }}
+                      sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}
                     >
-                      {format(new Date(reply.createdAt), 'PPP p')}
+                      {format(new Date(reply.createdAt), 'PPP HH:mm:ss')}
                     </Typography>
                   </Box>
                   {isAuthor(reply.author) && (

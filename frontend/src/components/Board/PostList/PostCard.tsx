@@ -83,7 +83,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, children }) => {
                 fontSize: { xs: '0.75rem', sm: '0.875rem' }
               }}
             >
-              {format(new Date(post.createdAt), 'PPP p')}
+              {format(new Date(post.createdAt), 'PPP HH:mm:ss')}
             </Typography>
           </Box>
           <Stack 

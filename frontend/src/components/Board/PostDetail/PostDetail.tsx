@@ -17,7 +17,7 @@ import {
 import { Post, CreateCommentRequest, User } from '../../../types/api';
 import { format } from 'date-fns';
 import Comment from '../Comment/Comment';
-import { Favorite, FavoriteBorder, MoreVert, ArrowBack, Edit, Delete } from '@mui/icons-material';
+import { Favorite, FavoriteBorder, MoreVert, ArrowBack, Edit, Delete, ChatBubbleOutline } from '@mui/icons-material';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { usePullToRefresh } from '../../../hooks/usePullToRefresh';
@@ -187,23 +187,14 @@ const PostDetail: React.FC<PostDetailProps> = ({
                 }}
               >
                 <MenuItem onClick={handleBack}>
-                  <ListItemIcon>
-                    <ArrowBack fontSize="small" sx={{ color: '#2C3E50' }} />
-                  </ListItemIcon>
-                  <ListItemText>Back</ListItemText>
+                  <ListItemText sx={{ color: '#2C3E50' }}>Back</ListItemText>
                 </MenuItem>
                 {isPostAuthor && [
                   <MenuItem key="edit" onClick={handleEdit}>
-                    <ListItemIcon>
-                      <Edit fontSize="small" sx={{ color: '#2C3E50' }} />
-                    </ListItemIcon>
-                    <ListItemText>Edit</ListItemText>
+                    <ListItemText sx={{ color: '#2C3E50' }}>Edit</ListItemText>
                   </MenuItem>,
                   <MenuItem key="delete" onClick={handleDelete}>
-                    <ListItemIcon>
-                      <Delete fontSize="small" sx={{ color: '#E74C3C' }} />
-                    </ListItemIcon>
-                    <ListItemText sx={{ color: '#E74C3C' }}>Delete</ListItemText>
+                    <ListItemText sx={{ color: '#2C3E50' }}>Delete</ListItemText>
                   </MenuItem>
                 ]}
               </Menu>
@@ -229,10 +220,12 @@ const PostDetail: React.FC<PostDetailProps> = ({
                 color="text.secondary"
                 sx={{ 
                   fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  ml: { xs: 0, sm: 'auto' }
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5
                 }}
               >
-                {format(new Date(post.createdAt), 'PPP p')}
+                {format(new Date(post.createdAt), 'PPP HH:mm:ss')}
               </Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
@@ -291,7 +284,9 @@ const PostDetail: React.FC<PostDetailProps> = ({
             gutterBottom
             sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
           >
-            Comments ({post.comments.length})
+            Comments ({post.comments.reduce((total, comment) => 
+              total + 1 + (comment.replies?.length || 0), 0
+            )})
           </Typography>
 
           <Box 
