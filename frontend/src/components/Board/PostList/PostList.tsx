@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Container, 
   TextField, 
@@ -10,7 +10,7 @@ import {
 import { Post } from '../../../types/api';
 import PostCard from './PostCard';
 import PostCountIndicator from './PostCountIndicator';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface PostListProps {
   posts: Post[];
@@ -21,8 +21,11 @@ const POSTS_PER_PAGE = 3;
 
 const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Get page from URL or default to 1
+  const page = parseInt(searchParams.get('page') || '1', 10);
 
   const filteredPosts = posts.filter(post =>
     post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -33,10 +36,18 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
   const startIndex = (page - 1) * POSTS_PER_PAGE;
   const paginatedPosts = filteredPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
 
+  // Update URL when page changes
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value);
+    setSearchParams({ page: value.toString() });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    if (searchTerm) {
+      setSearchParams({ page: '1' });
+    }
+  }, [searchTerm, setSearchParams]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 1 }}>
@@ -96,27 +107,27 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
             Create New Post
           </Button>
         </Stack>
-      <PostCountIndicator
+        <PostCountIndicator
           total={filteredPosts.length} 
           current={paginatedPosts.length} 
           page={page}
-      />
+        />
         <Stack spacing={2}>
-      {paginatedPosts.map(post => (
+          {paginatedPosts.map(post => (
             <PostCard 
-          key={post._id}
+              key={post._id}
               post={post} 
-          onClick={() => onPostClick(post)}
+              onClick={() => onPostClick(post)}
             />
           ))}
         </Stack>
-      {totalPages > 1 && (
+        {totalPages > 1 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={handlePageChange}
+              color="primary"
               sx={{
                 '& .MuiPaginationItem-root': {
                   color: '#2C3E50',
@@ -132,9 +143,9 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick }) => {
                   },
                 },
               }}
-          />
-        </Box>
-      )}
+            />
+          </Box>
+        )}
       </Stack>
     </Container>
   );
