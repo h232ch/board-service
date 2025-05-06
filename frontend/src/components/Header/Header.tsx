@@ -26,10 +26,11 @@ interface HeaderProps {
   username: string;
   onLogout: () => void;
   userInfo: User | null;
+  refresh?: () => Promise<void>;
 }
 
 // Create a functional component with TypeScript
-const Header: React.FC<HeaderProps> = ({ isLoggedIn, username, onLogout, userInfo }) => {
+const Header: React.FC<HeaderProps> = ({ isLoggedIn, username, onLogout, userInfo, refresh }) => {
   const [showProfile, setShowProfile] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -51,8 +52,11 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, username, onLogout, userInf
     setMenuAnchorEl(null);
   };
 
-  const handleBoardClick = () => {
+  const handleBoardClick = async () => {
     navigate('/board');
+    if (refresh) {
+      await refresh();
+    }
     handleMenuClose();
   };
 
@@ -105,7 +109,12 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, username, onLogout, userInf
               flexGrow: 1,
               cursor: 'pointer'
             }}
-            onClick={() => navigate('/board')}
+            onClick={async () => {
+              navigate('/board');
+              if (refresh) {
+                await refresh();
+              }
+            }}
           >
             Board Service
           </Typography>

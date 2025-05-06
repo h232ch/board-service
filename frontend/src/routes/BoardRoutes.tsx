@@ -215,6 +215,7 @@ export const BoardRoutes: React.FC = () => {
         username={user.username}
         onLogout={logout}
         userInfo={user}
+        refresh={fetchPosts}
       />
       <Container maxWidth="md" sx={{ flex: 1, py: 3 }}>
         <Routes>
