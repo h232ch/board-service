@@ -1,77 +1,119 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, Chip } from '@mui/material';
+import { 
+  Card, 
+  CardContent, 
+  Typography, 
+  Box, 
+  Chip,
+  Stack
+} from '@mui/material';
 import { Post } from '../../../types/api';
 import { format } from 'date-fns';
+import { Favorite, FavoriteBorder, ChatBubbleOutline } from '@mui/icons-material';
+import { useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 interface PostCardProps {
   post: Post;
-  onClick: (post: Post) => void;
+  onClick: () => void;
+  children?: React.ReactNode;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onClick, children }) => {
+  const theme = useTheme();
+  const isLiked = post.likes.includes(localStorage.getItem('userId') || '');
+
   return (
     <Card 
-      onClick={() => onClick(post)}
+      onClick={onClick}
       sx={{ 
         cursor: 'pointer',
         transition: 'transform 0.2s, box-shadow 0.2s',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
         '&:hover': {
           transform: 'translateY(-2px)',
-          boxShadow: '0 6px 12px rgba(0,0,0,0.15)'
-        }
+          boxShadow: 3
+        },
+        ...(useMediaQuery(theme.breakpoints.up('sm')) && {
+          bgcolor: 'background.paper',
+          borderRadius: 1,
+          boxShadow: 1
+        })
       }}
     >
       <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
         <Typography 
           variant="h6" 
-          component="div" 
+          component="h2" 
           gutterBottom
           sx={{ 
-            fontSize: { xs: '1rem', sm: '1.25rem' },
+            fontSize: { xs: '1rem', sm: '1.1rem' },
+            fontWeight: 600,
+            wordBreak: 'break-word',
             mb: 1
           }}
         >
           {post.title}
         </Typography>
-        <Typography 
-          variant="body2" 
-          color="text.secondary" 
+        <Box 
           sx={{ 
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            mb: 1
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 0.5
           }}
         >
-          {post.content.length > 100 ? `${post.content.substring(0, 100)}...` : post.content}
-        </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Chip 
-              label={`${post.comments.length} comments`} 
-              size="small"
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1,
+            flexWrap: 'wrap'
+          }}>
+            <Typography 
+              variant="subtitle2" 
+              color="primary"
+              sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+            >
+              {post.author.username}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
               sx={{ 
-                borderRadius: '4px',
-                backgroundColor: 'rgba(44, 62, 80, 0.08)',
-                '& .MuiChip-label': {
-                  color: '#2C3E50'
-                }
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
               }}
-            />
-            <Chip 
-              label={`${post.likes.length} likes`} 
-              size="small"
-              sx={{ 
-                borderRadius: '4px',
-                backgroundColor: 'rgba(231, 76, 60, 0.08)',
-                '& .MuiChip-label': {
-                  color: '#E74C3C'
-                }
-              }}
-            />
+            >
+              {format(new Date(post.createdAt), 'PPP p')}
+            </Typography>
           </Box>
-          <Typography variant="caption" color="text.secondary">
-            {format(new Date(post.createdAt), 'yyyy-MM-dd HH:mm')}
-          </Typography>
+          <Stack 
+            direction="row" 
+            spacing={2}
+            sx={{ 
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 0.5
+            }}>
+              {isLiked ? (
+                <Favorite sx={{ color: 'error.main', fontSize: { xs: '0.875rem', sm: '1rem' } }} />
+              ) : (
+                <FavoriteBorder sx={{ color: 'text.secondary', fontSize: { xs: '0.875rem', sm: '1rem' } }} />
+              )}
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+              >
+                {post.likes.length}
+              </Typography>
+            </Box>
+            {children}
+          </Stack>
         </Box>
       </CardContent>
     </Card>

@@ -14,6 +14,7 @@ import PostCard from './PostCard';
 import PostCountIndicator from './PostCountIndicator';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePullToRefresh } from '../../../hooks/usePullToRefresh';
+import { ChatBubbleOutline } from '@mui/icons-material';
 
 interface PostListProps {
   posts: Post[];
@@ -21,7 +22,7 @@ interface PostListProps {
   refresh: () => Promise<void>;
 }
 
-const POSTS_PER_PAGE = 7;
+const POSTS_PER_PAGE = 5;
 
 const PostList: React.FC<PostListProps> = ({ posts, onPostClick, refresh }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -164,7 +165,24 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick, refresh }) => {
                 key={post._id}
                 post={post} 
                 onClick={() => onPostClick(post)}
-              />
+              >
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 0.5
+                }}>
+                  <ChatBubbleOutline sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }} />
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                  >
+                    {post.comments.reduce((total, comment) => 
+                      total + 1 + (comment.replies?.length || 0), 0
+                    )}
+                  </Typography>
+                </Box>
+              </PostCard>
             ))}
           </Stack>
           {totalPages > 1 && (
