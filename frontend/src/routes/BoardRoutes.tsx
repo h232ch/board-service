@@ -7,8 +7,7 @@ import PostList from '../components/Board/PostList/PostList';
 import PostDetail from '../components/Board/PostDetail/PostDetail';
 import PostForm from '../components/Board/PostForm/PostForm';
 import { Post, CreatePostRequest, CreateCommentRequest } from '../types/api';
-import api from '../api/axios';
-import commentService from '../services/commentService';
+import { postService } from '../api/services';
 
 export const BoardRoutes: React.FC = () => {
   const navigate = useNavigate();
@@ -18,8 +17,8 @@ export const BoardRoutes: React.FC = () => {
 
   const fetchPosts = useCallback(async () => {
     try {
-      const response = await api.get<Post[]>('/posts');
-      setPosts(response.data);
+      const data = await postService.getPosts();
+      setPosts(data);
     } catch (error) {
       console.error('Failed to fetch posts:', error);
     }
@@ -49,8 +48,8 @@ export const BoardRoutes: React.FC = () => {
 
   const handleCreatePost = async (postData: CreatePostRequest) => {
     try {
-      const response = await api.post<Post>('/posts', postData);
-      setPosts(prevPosts => [response.data, ...prevPosts]);
+      const data = await postService.createPost(postData);
+      setPosts(prevPosts => [data, ...prevPosts]);
       navigate('/board');
     } catch (error) {
       console.error('Failed to create post:', error);
@@ -61,13 +60,13 @@ export const BoardRoutes: React.FC = () => {
   const handleEditPost = async (postData: CreatePostRequest) => {
     if (!selectedPost) return;
     try {
-      const response = await api.put<Post>(`/posts/${selectedPost._id}`, postData);
+      const data = await postService.updatePost(selectedPost._id, postData);
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post._id === selectedPost._id ? response.data : post
+          post._id === selectedPost._id ? data : post
         )
       );
-      setSelectedPost(response.data);
+      setSelectedPost(data);
       navigate(`/board/${selectedPost._id}`);
     } catch (error) {
       console.error('Failed to edit post:', error);
@@ -77,7 +76,7 @@ export const BoardRoutes: React.FC = () => {
 
   const handleDeletePost = async (postId: string) => {
     try {
-      await api.delete(`/posts/${postId}`);
+      await postService.deletePost(postId);
       setPosts(prevPosts => prevPosts.filter(post => post._id !== postId));
       navigate('/board');
     } catch (error) {
@@ -88,14 +87,14 @@ export const BoardRoutes: React.FC = () => {
 
   const handleAddComment = async (postId: string, comment: CreateCommentRequest) => {
     try {
-      const response = await api.post<Post>(`/posts/${postId}/comments`, comment);
+      const data = await postService.addComment(postId, comment);
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post._id === postId ? response.data : post
+          post._id === postId ? data : post
         )
       );
       if (selectedPost?._id === postId) {
-        setSelectedPost(response.data);
+        setSelectedPost(data);
       }
     } catch (error) {
       console.error('Failed to add comment:', error);
@@ -105,14 +104,14 @@ export const BoardRoutes: React.FC = () => {
 
   const handleDeleteComment = async (postId: string, commentId: string) => {
     try {
-      const response = await api.delete<Post>(`/posts/${postId}/comments/${commentId}`);
+      const data = await postService.deleteComment(postId, commentId);
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post._id === postId ? response.data : post
+          post._id === postId ? data : post
         )
       );
       if (selectedPost?._id === postId) {
-        setSelectedPost(response.data);
+        setSelectedPost(data);
       }
     } catch (error) {
       console.error('Failed to delete comment:', error);
@@ -122,14 +121,14 @@ export const BoardRoutes: React.FC = () => {
 
   const handleEditComment = async (postId: string, commentId: string, content: string) => {
     try {
-      const response = await api.put<Post>(`/posts/${postId}/comments/${commentId}`, { content });
+      const data = await postService.updateComment(postId, commentId, { content });
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post._id === postId ? response.data : post
+          post._id === postId ? data : post
         )
       );
       if (selectedPost?._id === postId) {
-        setSelectedPost(response.data);
+        setSelectedPost(data);
       }
     } catch (error) {
       console.error('Failed to edit comment:', error);
@@ -139,14 +138,14 @@ export const BoardRoutes: React.FC = () => {
 
   const handleAddReply = async (postId: string, commentId: string, content: string) => {
     try {
-      const response = await commentService.addReply(postId, commentId, { content });
+      const data = await postService.addReply(postId, commentId, { content });
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post._id === postId ? response.data : post
+          post._id === postId ? data : post
         )
       );
       if (selectedPost?._id === postId) {
-        setSelectedPost(response.data);
+        setSelectedPost(data);
       }
     } catch (error) {
       console.error('Failed to add reply:', error);
@@ -156,14 +155,14 @@ export const BoardRoutes: React.FC = () => {
 
   const handleEditReply = async (postId: string, commentId: string, replyId: string, content: string) => {
     try {
-      const response = await commentService.updateReply(postId, commentId, replyId, { content });
+      const data = await postService.updateReply(postId, commentId, replyId, { content });
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post._id === postId ? response.data : post
+          post._id === postId ? data : post
         )
       );
       if (selectedPost?._id === postId) {
-        setSelectedPost(response.data);
+        setSelectedPost(data);
       }
     } catch (error) {
       console.error('Failed to edit reply:', error);
@@ -173,14 +172,14 @@ export const BoardRoutes: React.FC = () => {
 
   const handleDeleteReply = async (postId: string, commentId: string, replyId: string) => {
     try {
-      const response = await commentService.deleteReply(postId, commentId, replyId);
+      const data = await postService.deleteReply(postId, commentId, replyId);
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post._id === postId ? response.data : post
+          post._id === postId ? data : post
         )
       );
       if (selectedPost?._id === postId) {
-        setSelectedPost(response.data);
+        setSelectedPost(data);
       }
     } catch (error) {
       console.error('Failed to delete reply:', error);
@@ -190,14 +189,14 @@ export const BoardRoutes: React.FC = () => {
 
   const handleLike = async (postId: string) => {
     try {
-      const response = await api.post<Post>(`/posts/${postId}/like`);
+      const data = await postService.toggleLike(postId);
       setPosts(prevPosts => 
         prevPosts.map(post => 
-          post._id === postId ? response.data : post
+          post._id === postId ? data : post
         )
       );
       if (selectedPost?._id === postId) {
-        setSelectedPost(response.data);
+        setSelectedPost(data);
       }
     } catch (error) {
       console.error('Error liking post:', error);
@@ -265,7 +264,6 @@ export const BoardRoutes: React.FC = () => {
               <Navigate to="/board" />
             )
           } />
-          <Route path="*" element={<Navigate to="/board" replace />} />
         </Routes>
       </Container>
     </Box>

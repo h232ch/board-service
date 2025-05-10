@@ -3,7 +3,7 @@ import {
   Card, 
   CardContent, 
   Typography, 
-  Box, 
+  Box,
   Stack
 } from '@mui/material';
 import { Post } from '../../../types/api';

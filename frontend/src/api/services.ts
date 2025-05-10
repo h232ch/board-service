@@ -48,6 +48,31 @@ export const postService = {
     return response.data;
   },
 
+  updateComment: async (postId: string, commentId: string, data: { content: string }): Promise<Post> => {
+    const response = await apiClient.put<Post>(`/posts/${postId}/comments/${commentId}`, data);
+    return response.data;
+  },
+
+  deleteComment: async (postId: string, commentId: string): Promise<Post> => {
+    const response = await apiClient.delete<Post>(`/posts/${postId}/comments/${commentId}`);
+    return response.data;
+  },
+
+  addReply: async (postId: string, commentId: string, data: CreateCommentRequest): Promise<Post> => {
+    const response = await apiClient.post<Post>(`/posts/${postId}/comments/${commentId}/replies`, data);
+    return response.data;
+  },
+
+  updateReply: async (postId: string, commentId: string, replyId: string, data: { content: string }): Promise<Post> => {
+    const response = await apiClient.put<Post>(`/posts/${postId}/comments/${commentId}/replies/${replyId}`, data);
+    return response.data;
+  },
+
+  deleteReply: async (postId: string, commentId: string, replyId: string): Promise<Post> => {
+    const response = await apiClient.delete<Post>(`/posts/${postId}/comments/${commentId}/replies/${replyId}`);
+    return response.data;
+  },
+
   toggleLike: async (postId: string): Promise<Post> => {
     const response = await apiClient.post<Post>(`/posts/${postId}/like`);
     return response.data;
