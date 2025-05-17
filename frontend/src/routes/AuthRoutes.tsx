@@ -9,13 +9,17 @@ import { useAuth } from '../contexts/AuthContext';
 const AuthRoutes: React.FC = () => {
   const { user, logout } = useAuth();
 
+  if (user) {
+    return <Navigate to="/board" replace />;
+  }
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header 
-        isLoggedIn={!!user}
-        username={user?.username || ''}
+        isLoggedIn={false}
+        username=""
         onLogout={logout}
-        userInfo={user}
+        userInfo={null}
       />
       <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Routes>
