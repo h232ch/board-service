@@ -37,17 +37,17 @@ const getPosts = async (req, res) => {
       .populate({
         path: 'author',
         select: 'username',
-        options: { lean: true }
+        required: true
       })
       .populate({
         path: 'comments.author',
         select: 'username',
-        options: { lean: true }
+        required: true
       })
       .populate({
         path: 'comments.replies.author',
         select: 'username',
-        options: { lean: true }
+        required: true
       })
       .sort({ createdAt: -1 });
     res.json(posts);
@@ -63,17 +63,17 @@ const getPost = async (req, res) => {
       .populate({
         path: 'author',
         select: 'username',
-        options: { lean: true }
+        required: true
       })
       .populate({
         path: 'comments.author',
         select: 'username',
-        options: { lean: true }
+        required: true
       })
       .populate({
         path: 'comments.replies.author',
         select: 'username',
-        options: { lean: true }
+        required: true
       });
     
     if (!post) {

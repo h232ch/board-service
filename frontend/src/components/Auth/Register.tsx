@@ -1,269 +1,244 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  Stack,
-  Link,
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
   Container,
+  Paper,
   InputAdornment,
-  IconButton
+  IconButton,
+  CircularProgress
 } from '@mui/material';
-import { Visibility, VisibilityOff, Email, Lock, Person } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
-interface RegisterProps {
-  onSubmit: (username: string, email: string, password: string) => Promise<void>;
-}
-
-const Register: React.FC<RegisterProps> = ({ onSubmit }) => {
+const Register: React.FC = () => {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
+    setIsLoading(true);
 
     try {
-      await onSubmit(formData.username, formData.email, formData.password);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Registration failed. Please try again.');
+      await register(username, email, password);
+      navigate('/board');
+    } catch (err) {
+      setError('Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
+    <Container 
+      maxWidth="sm" 
+      sx={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 4
+      }}
+    >
+      <Paper
+        elevation={0}
         sx={{
-          display: 'flex',
-      justifyContent: 'center', 
-          alignItems: 'center',
-      minHeight: '100vh',
-          py: 4,
-          px: { xs: 2, sm: 0 }
+          width: '100%',
+          p: { xs: 3, sm: 4 },
+          borderRadius: 2,
+          bgcolor: 'background.paper',
+          boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)'
         }}
       >
+        <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            sx={{ 
+              fontWeight: 700,
+              color: '#2C3E50',
+              mb: 1
+            }}
+          >
+            Create an account
+          </Typography>
+          <Typography 
+            variant="body1" 
+            color="text.secondary"
+            sx={{ fontSize: '1rem' }}
+          >
+            Sign up to get started
+          </Typography>
+        </Box>
+
         <Box 
+          component="form" 
+          onSubmit={handleSubmit}
           sx={{ 
-            p: { xs: 2, sm: 4 }, 
-            width: '100%',
-            borderRadius: { xs: 0, sm: 2 },
-            bgcolor: 'background.paper',
-            boxShadow: { xs: 'none', sm: '0 8px 32px rgba(0,0,0,0.1)' }
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2
           }}
         >
-          <Box sx={{ mb: 4, textAlign: 'center' }}>
-            <Typography 
-              variant="h4" 
-              component="h1" 
-              gutterBottom 
-              sx={{ 
-                fontWeight: 600,
-                color: '#2C3E50',
-                mb: 1
-              }}
-            >
-              Create Account
-            </Typography>
-            <Typography 
-              variant="body1" 
-              color="text.secondary"
-              sx={{ mb: 3 }}
-            >
-              Please fill in your details to register
-        </Typography>
-          </Box>
-
-          <Box component="form" onSubmit={handleSubmit}>
-            <Stack spacing={3}>
           <TextField
             fullWidth
             label="Username"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Person sx={{ color: 'text.secondary' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'primary.main',
-                    }
-                  }
-                }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#2C3E50',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#2C3E50',
+                  borderWidth: 2
+                }
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: '#2C3E50'
+              }
+            }}
           />
+
           <TextField
             fullWidth
             label="Email"
-                name="email"
             type="email"
-                value={formData.email}
-                onChange={handleChange}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Email sx={{ color: 'text.secondary' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'primary.main',
-                    }
-                  }
-                }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#2C3E50',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#2C3E50',
+                  borderWidth: 2
+                }
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: '#2C3E50'
+              }
+            }}
           />
+
           <TextField
             fullWidth
             label="Password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={handleChange}
-                required
-                autoComplete="new-password"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock sx={{ color: 'text.secondary' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'primary.main',
-                    }
-                  }
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Confirm Password"
-                name="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={formData.confirmPassword}
-                onChange={handleChange}
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
-                autoComplete="new-password"
-                error={formData.confirmPassword !== '' && formData.password !== formData.confirmPassword}
-                helperText={formData.confirmPassword !== '' && formData.password !== formData.confirmPassword ? 'Passwords do not match' : ''}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock sx={{ color: 'text.secondary' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        edge="end"
-                      >
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'primary.main',
-                    }
-                  }
-                }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                    sx={{ color: '#2C3E50' }}
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#2C3E50',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#2C3E50',
+                  borderWidth: 2
+                }
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: '#2C3E50'
+              }
+            }}
           />
+
           {error && (
-                <Typography color="error" sx={{ mt: 1 }}>
+            <Typography 
+              color="error" 
+              variant="body2"
+              sx={{ 
+                textAlign: 'center',
+                mt: 1
+              }}
+            >
               {error}
             </Typography>
           )}
+
           <Button
             type="submit"
-                variant="contained"
             fullWidth
-                size="large"
-                sx={{
-                  py: 1.5,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontSize: '1.1rem',
-                  bgcolor: '#2C3E50',
-                  '&:hover': {
-                    bgcolor: '#34495E',
-                  }
-                }}
+            variant="contained"
+            disabled={isLoading || !username || !email || !password}
+            sx={{
+              mt: 2,
+              py: 1.5,
+              borderRadius: '12px',
+              textTransform: 'none',
+              fontSize: '1rem',
+              fontWeight: 600,
+              bgcolor: '#2C3E50',
+              '&:hover': {
+                bgcolor: '#34495E',
+                boxShadow: '0px 4px 12px rgba(44, 62, 80, 0.2)'
+              },
+              '&.Mui-disabled': {
+                bgcolor: 'rgba(44, 62, 80, 0.12)',
+                color: 'rgba(44, 62, 80, 0.26)'
+              }
+            }}
           >
-                Sign Up
+            {isLoading ? (
+              <CircularProgress size={24} sx={{ color: 'inherit' }} />
+            ) : (
+              'Sign up'
+            )}
           </Button>
-              <Box sx={{ textAlign: 'center', mt: 2 }}>
-                <Typography variant="body2" component="span" color="text.secondary">
+
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                fontSize: '0.875rem',
+                '& a': {
+                  color: '#2C3E50',
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  '&:hover': {
+                    textDecoration: 'underline'
+                  }
+                }
+              }}
+            >
               Already have an account?{' '}
-                </Typography>
-                <Link
-                  component="button"
-                  variant="body2"
-                  onClick={() => navigate('/login')}
-                  sx={{ 
-                    cursor: 'pointer',
-                    color: '#2C3E50',
-                    fontWeight: 600,
-                    '&:hover': {
-                      color: '#34495E',
-                    }
-                  }}
-                >
-                  Sign In
-              </Link>
-              </Box>
-            </Stack>
+              <Link to="/login">Sign in</Link>
+            </Typography>
           </Box>
         </Box>
-    </Box>
+      </Paper>
     </Container>
   );
 };

@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
-import { AuthRoutes } from './routes/AuthRoutes';
+import AuthRoutes from './routes/AuthRoutes';
 import { BoardRoutes } from './routes/BoardRoutes';
 import { useAuth } from './contexts/AuthContext';
 
