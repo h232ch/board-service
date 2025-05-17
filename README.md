@@ -13,7 +13,18 @@ A full-stack bulletin board application built with React, TypeScript, and Node.j
 ```
 board-service/
 ├── frontend/          # React frontend application
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── contexts/      # React contexts (Auth, etc.)
+│   │   ├── routes/        # Route components
+│   │   ├── api/          # API service functions
+│   │   └── types/        # TypeScript type definitions
 └── backend/           # Node.js backend server
+    ├── src/
+    │   ├── controllers/  # Route controllers
+    │   ├── models/      # Mongoose models
+    │   ├── routes/      # API routes
+    │   └── middleware/  # Custom middleware
 ```
 
 ## Installation
@@ -85,21 +96,17 @@ npm start
 
 The frontend application will start running on http://localhost:3000
 
-## Cross-Origin Resource Sharing (CORS)
-
-To allow the frontend to communicate with the backend from different devices:
-
-1. In the backend `.env` file, set `FRONTEND_URL` to your frontend's URL:
-   - For local development: `FRONTEND_URL=http://localhost:3000`
-   - For production: `FRONTEND_URL=https://your-domain.com`
-
-2. In the frontend `.env` file, set `REACT_APP_API_URL` to your backend's URL:
-   - For local development: `REACT_APP_API_URL=http://localhost:8080/api`
-   - For production: `REACT_APP_API_URL=https://your-api-domain.com/api`
-
 ## Features
 
-- User authentication (Sign up, Login, Logout)
+### Authentication
+- User registration and login
+- JWT-based authentication
+- Protected routes
+- Automatic redirection based on auth status
+  - Authenticated users are redirected to /board when accessing /login or /register
+  - Unauthenticated users are redirected to /login when accessing protected routes
+
+### Board Features
 - Create, read, update, and delete posts
 - Comment system with nested replies
 - Like posts
@@ -107,12 +114,18 @@ To allow the frontend to communicate with the backend from different devices:
 - Responsive design for mobile and desktop
 - Pagination
 
+### Security
+- Protected API endpoints
+- JWT token validation
+- Password hashing with bcrypt
+- CORS configuration
+
 ## API Endpoints
 
 ### Authentication
-- POST /api/auth/signup - Register a new user
+- POST /api/auth/register - Register a new user
 - POST /api/auth/login - Login user
-- GET /api/auth/me - Get current user info
+- GET /api/auth/profile - Get current user info
 
 ### Posts
 - GET /api/posts - Get all posts
@@ -133,19 +146,37 @@ To allow the frontend to communicate with the backend from different devices:
 ## Technologies Used
 
 ### Frontend
-- React
+- React 18
 - TypeScript
-- Material-UI
-- React Router
+- Material-UI (MUI)
+- React Router v6
 - Axios
+- React Context API for state management
 
 ### Backend
 - Node.js
 - Express
-- MongoDB
-- Mongoose
+- MongoDB with Mongoose
 - JWT Authentication
-- bcrypt
+- bcrypt for password hashing
+- CORS middleware
+
+## Project Status
+
+### Completed Features
+- ✅ User authentication system
+- ✅ Protected routes and API endpoints
+- ✅ Post CRUD operations
+- ✅ Comment system with replies
+- ✅ Like functionality
+- ✅ Responsive design
+- ✅ Search functionality
+- ✅ Pagination
+
+### In Progress
+- 🔄 Performance optimization
+- 🔄 Error handling improvements
+- 🔄 UI/UX enhancements
 
 ## Contributing
 
