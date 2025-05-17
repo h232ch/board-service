@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { Box, CssBaseline, ThemeProvider, createTheme, CircularProgress } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import AuthRoutes from './routes/AuthRoutes';
 import { BoardRoutes } from './routes/BoardRoutes';
@@ -19,7 +19,15 @@ const theme = createTheme({
 });
 
 const AppRoutes: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -40,7 +48,7 @@ const App: React.FC = () => {
       <CssBaseline />
       <AuthProvider>
         <Router>
-            <AppRoutes />
+          <AppRoutes />
         </Router>
       </AuthProvider>
     </ThemeProvider>
