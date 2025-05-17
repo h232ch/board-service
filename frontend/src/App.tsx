@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box, CssBaseline, ThemeProvider, createTheme, CircularProgress } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import AuthRoutes from './routes/AuthRoutes';
@@ -32,11 +32,16 @@ const AppRoutes: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Routes>
-        {user ? (
-          <Route path="/*" element={<BoardRoutes />} />
-        ) : (
-          <Route path="/*" element={<AuthRoutes />} />
+        {/* 인증된 사용자가 /login이나 /register에 접근하면 /board로 리다이렉션 */}
+        {user && (
+          <>
+            <Route path="/login" element={<Navigate to="/board" replace />} />
+            <Route path="/register" element={<Navigate to="/board" replace />} />
+          </>
         )}
+        
+        {/* 인증된 사용자는 /board로, 그 외에는 AuthRoutes로 */}
+        <Route path="/*" element={user ? <BoardRoutes /> : <AuthRoutes />} />
       </Routes>
     </Box>
   );

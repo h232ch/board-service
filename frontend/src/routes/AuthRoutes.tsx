@@ -7,11 +7,7 @@ import { Box } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 
 const AuthRoutes: React.FC = () => {
-  const { user, logout } = useAuth();
-
-  if (user) {
-    return <Navigate to="/board" replace />;
-  }
+  const { logout } = useAuth();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
