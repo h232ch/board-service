@@ -162,7 +162,10 @@ const addComment = async (req, res) => {
     });
 
     await post.save();
+    
+    // Ensure proper population of all author fields
     const updatedPost = await Post.findById(post._id)
+      .populate('author', 'username')
       .populate({
         path: 'comments.author',
         select: 'username'
@@ -171,6 +174,7 @@ const addComment = async (req, res) => {
         path: 'comments.replies.author',
         select: 'username'
       });
+      
     res.json(updatedPost);
   } catch (error) {
     res.status(500).json({ message: 'Error adding comment', error: error.message });
@@ -201,6 +205,7 @@ const editComment = async (req, res) => {
     await post.save();
     
     const updatedPost = await Post.findById(post._id)
+      .populate('author', 'username')
       .populate({
         path: 'comments.author',
         select: 'username'
@@ -238,6 +243,7 @@ const deleteComment = async (req, res) => {
     await post.save();
     
     const updatedPost = await Post.findById(post._id)
+      .populate('author', 'username')
       .populate({
         path: 'comments.author',
         select: 'username'
@@ -315,6 +321,7 @@ const addReply = async (req, res) => {
 
     await post.save();
     const updatedPost = await Post.findById(post._id)
+      .populate('author', 'username')
       .populate({
         path: 'comments.author',
         select: 'username'
@@ -358,6 +365,7 @@ const editReply = async (req, res) => {
     await post.save();
     
     const updatedPost = await Post.findById(post._id)
+      .populate('author', 'username')
       .populate({
         path: 'comments.author',
         select: 'username'
@@ -400,6 +408,7 @@ const deleteReply = async (req, res) => {
     await post.save();
     
     const updatedPost = await Post.findById(post._id)
+      .populate('author', 'username')
       .populate({
         path: 'comments.author',
         select: 'username'
