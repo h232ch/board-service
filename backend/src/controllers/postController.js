@@ -278,6 +278,9 @@ const likePost = async (req, res) => {
     }
 
     await post.save();
+    // 디버깅용
+    // console.dir(post, { depth: null });
+    // console.log('Post:', JSON.stringify(post, null, 2));
     
     const updatedPost = await Post.findById(req.params.id)
       .populate({

@@ -56,7 +56,8 @@ const PostList: React.FC<PostListProps> = ({ posts, onPostClick, refresh }) => {
   }, [searchTerm, setSearchParams]);
 
   return (
-    <Container maxWidth="lg" sx={{ p: { xs: 0, sm: 1 } }}>
+    <Container maxWidth="md" sx={{ p: { xs: 0, sm: 1 } }}>
+      
       <Box
         sx={{
           position: 'relative',
