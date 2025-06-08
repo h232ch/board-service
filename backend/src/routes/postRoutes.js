@@ -18,8 +18,8 @@ const {
 const auth = require('../middleware/auth');
 
 // Public routes
-router.get('/', getPosts);
-router.get('/:id', getPost);
+router.get('/', auth, getPosts);
+router.get('/:id', auth, getPost);
 
 // Protected routes
 router.post('/', auth, createPost);
