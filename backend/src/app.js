@@ -11,12 +11,20 @@ const app = express();
 // CORS Configuration
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://192.168.219.120:3000'
+  'http://192.168.219.120:3000',
+  'http://localhost:80',
+  'http://localhost',
+  'http://frontend-container'
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
