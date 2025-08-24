@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: board-backend-service
+  namespace: board-service
+  labels:
+    app: board-backend
+spec:
+  selector:
+    app: board-backend
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: board-service-config
+  namespace: board-service
+data:
+  NODE_ENV: "production"
