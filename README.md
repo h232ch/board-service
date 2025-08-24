@@ -1,187 +1,219 @@
 # Board Service
 
-A full-stack bulletin board application built with React, TypeScript, and Node.js.
+A full-stack board application with React frontend and Node.js backend.
 
-## Prerequisites
+## Features
 
-- Node.js (v14 or higher)
-- npm (v6 or higher)
-- MongoDB (v4.4 or higher)
+- User authentication (JWT)
+- Board posts with comments and replies
+- Like functionality
+- Responsive design with Material-UI
+- Docker containerization
+- Cloud MongoDB integration
 
 ## Project Structure
 
 ```
-board-service/
-├── frontend/          # React frontend application
-│   ├── src/
-│   │   ├── components/    # Reusable UI components
-│   │   ├── contexts/      # React contexts (Auth, etc.)
-│   │   ├── routes/        # Route components
-│   │   ├── api/          # API service functions
-│   │   └── types/        # TypeScript type definitions
-└── backend/           # Node.js backend server
-    ├── src/
-    │   ├── controllers/  # Route controllers
-    │   ├── models/      # Mongoose models
-    │   ├── routes/      # API routes
-    │   └── middleware/  # Custom middleware
+├── frontend/          # React application
+├── backend/           # Node.js Express API
+├── docker-compose.yml # Docker services orchestration
+├── frontend/Dockerfile # Frontend container configuration
+└── backend/Dockerfile  # Backend container configuration
 ```
 
-## Installation
+## Environment Setup
 
-### Backend Setup
+### Backend (.env file)
 
-1. Navigate to the backend directory:
+Create a `.env` file in the `backend/` directory:
+
 ```bash
-cd backend
-```
+# MongoDB Connection (Cloud MongoDB)
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority&appName=ClusterName
 
-2. Install dependencies:
-```bash
-npm install
-```
+# JWT Secret
+JWT_SECRET=your_super_secret_jwt_key_here_change_this_in_production
 
-3. Create a `.env` file in the backend directory with the following variables:
-```env
+# Server Configuration
 PORT=8080
-MONGODB_URI=mongodb://localhost:27017/board-service
-JWT_SECRET=your_jwt_secret_key
+NODE_ENV=development
+
+# CORS Configuration
 FRONTEND_URL=http://localhost:3000
 ```
 
-### Frontend Setup
+### Frontend
 
-1. Navigate to the frontend directory:
+No environment variables required for basic setup.
+
+## Docker Setup
+
+### 1. Build and run with Docker Compose (Recommended)
+
 ```bash
+# Build and start all services
+docker compose up --build
+
+# Run in background
+docker compose up -d --build
+
+# Stop all services
+docker compose down
+
+# View logs
+docker compose logs -f
+```
+
+### 2. Individual service build and run
+
+```bash
+# Backend
+cd backend
+docker build -t board-backend .
+docker run -p 8080:8080 --env-file .env board-backend
+
+# Frontend
 cd frontend
+docker build -t board-frontend .
+docker run -p 80:80 board-frontend
 ```
 
-2. Install dependencies:
-```bash
-npm install
-```
+### 3. Docker Compose Services
 
-3. Create a `.env` file in the frontend directory with the following variables:
-```env
-REACT_APP_API_URL=http://localhost:8080/api
-```
+The `docker-compose.yml` file orchestrates the following services:
 
-## Running the Application
+- **backend**: Node.js Express API server (port 8080)
+- **frontend**: React application served by Nginx (port 80)
 
-### Start Backend Server
+### 4. Docker Images
 
-1. Navigate to the backend directory:
+- **Backend**: Node.js 18 Alpine with Express server
+- **Frontend**: Multi-stage build (Node.js build → Nginx serve)
+
+## Development Setup
+
+### Backend
+
 ```bash
 cd backend
-```
-
-2. Start the development server:
-```bash
+npm install
 npm run dev
 ```
 
-The backend server will start running on http://localhost:8080
+### Frontend
 
-### Start Frontend Development Server
-
-1. Navigate to the frontend directory:
 ```bash
 cd frontend
-```
-
-2. Start the development server:
-```bash
+npm install
 npm start
 ```
 
-The frontend application will start running on http://localhost:3000
-
-## Features
-
-### Authentication
-- User registration and login
-- JWT-based authentication
-- Protected routes
-- Automatic redirection based on auth status
-  - Authenticated users are redirected to /board when accessing /login or /register
-  - Unauthenticated users are redirected to /login when accessing protected routes
-
-### Board Features
-- Create, read, update, and delete posts
-- Comment system with nested replies
-- Like posts
-- Search functionality
-- Responsive design for mobile and desktop
-- Pagination
-
-### Security
-- Protected API endpoints
-- JWT token validation
-- Password hashing with bcrypt
-- CORS configuration
-
 ## API Endpoints
 
-### Authentication
-- POST /api/auth/register - Register a new user
-- POST /api/auth/login - Login user
-- GET /api/auth/profile - Get current user info
+### Users
+- `POST /api/users/register` - User registration
+- `POST /api/users/login` - User login
+- `GET /api/users/profile` - Get user profile (auth required)
 
 ### Posts
-- GET /api/posts - Get all posts
-- POST /api/posts - Create a new post
-- GET /api/posts/:id - Get a specific post
-- PUT /api/posts/:id - Update a post
-- DELETE /api/posts/:id - Delete a post
-- POST /api/posts/:id/like - Like a post
+- `GET /api/posts` - Get all posts
+- `GET /api/posts/:id` - Get specific post
+- `POST /api/posts` - Create post (auth required)
+- `PUT /api/posts/:id` - Update post (auth required)
+- `DELETE /api/posts/:id` - Delete post (auth required)
 
 ### Comments
-- POST /api/posts/:postId/comments - Add a comment
-- PUT /api/posts/:postId/comments/:commentId - Update a comment
-- DELETE /api/posts/:postId/comments/:commentId - Delete a comment
-- POST /api/posts/:postId/comments/:commentId/replies - Add a reply
-- PUT /api/posts/:postId/comments/:commentId/replies/:replyId - Update a reply
-- DELETE /api/posts/:postId/comments/:commentId/replies/:replyId - Delete a reply
+- `POST /api/posts/:id/comments` - Add comment (auth required)
+- `PUT /api/posts/:id/comments/:commentId` - Edit comment (auth required)
+- `DELETE /api/posts/:id/comments/:commentId` - Delete comment (auth required)
 
-## Technologies Used
+## Security Features
 
-### Frontend
-- React 18
-- TypeScript
-- Material-UI (MUI)
-- React Router v6
-- Axios
-- React Context API for state management
+- JWT-based authentication
+- Password hashing with bcrypt
+- CORS protection
+- Input validation
+- Rate limiting (when configured)
+- Non-root Docker containers
 
-### Backend
-- Node.js
-- Express
-- MongoDB with Mongoose
-- JWT Authentication
-- bcrypt for password hashing
-- CORS middleware
+## Production Deployment
 
-## Project Status
+### 1. Environment Variables
+- Set `NODE_ENV=production`
+- Use strong JWT secret
+- Configure production MongoDB URI
+- Set proper CORS origins
 
-### Completed Features
-- ✅ User authentication system
-- ✅ Protected routes and API endpoints
-- ✅ Post CRUD operations
-- ✅ Comment system with replies
-- ✅ Like functionality
-- ✅ Responsive design
-- ✅ Search functionality
-- ✅ Pagination
+### 2. Docker Production
+```bash
+# Production build
+docker compose -f docker-compose.prod.yml up --build
 
-### In Progress
-- 🔄 Performance optimization
-- 🔄 Error handling improvements
-- 🔄 UI/UX enhancements
+# Or use individual containers
+docker build -t board-backend-prod ./backend
+docker build -t board-frontend-prod ./frontend
+```
 
-## Contributing
+### 3. Nginx Configuration
+- Reverse proxy for API requests
+- Static file serving for frontend
+- SSL/TLS configuration
+- Security headers
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request 
+## Health Checks
+
+- Backend: `/health` endpoint
+- Frontend: `/health` endpoint
+- Docker health checks configured
+- MongoDB connection monitoring
+
+## Monitoring
+
+- Request logging
+- Error logging
+- Health check monitoring
+- Performance metrics (when configured)
+- Docker container status monitoring
+
+## Troubleshooting
+
+### Common Docker Issues
+
+1. **Port conflicts**: Ensure ports 80 and 8080 are available
+2. **Permission issues**: Use `sudo` for port 80 on some systems
+3. **Build failures**: Check Dockerfile syntax and dependencies
+4. **Container not starting**: Check logs with `docker compose logs`
+
+### Docker Commands
+
+```bash
+# Check running containers
+docker compose ps
+
+# View service logs
+docker compose logs backend
+docker compose logs frontend
+
+# Restart services
+docker compose restart
+
+# Clean up
+docker compose down --volumes --remove-orphans
+```
+
+## Performance Optimization
+
+- Multi-stage Docker builds
+- Nginx static file serving
+- Gzip compression enabled
+- Static asset caching
+- Docker layer caching
+
+## Security Best Practices
+
+- Non-root containers
+- Minimal base images (Alpine)
+- Environment variable protection
+- CORS configuration
+- Input validation
+- JWT token management 

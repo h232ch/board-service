@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb+srv://dnwn7166:Bk7WAOESs0qyO18f@cluster0.drrfpcf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+      - JWT_SECRET=your_jwt_secret_here
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
