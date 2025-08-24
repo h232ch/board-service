@@ -543,6 +543,238 @@ curl http://localhost:3000/
 curl http://board-service.local/health
 ```
 
+## 🌐 **Ingress Testing & How It Works**
+
+### **Why Use Minikube Tunnel for Ingress Testing?**
+
+Ingress controllers in Kubernetes are designed to work with **LoadBalancer** services that have external IPs. However, in Minikube (local development), there's no cloud LoadBalancer, so we use **minikube tunnel** to simulate this behavior.
+
+#### **The Problem:**
+- **Ingress Controller**: Expects external LoadBalancer IP
+- **Minikube**: Only provides internal cluster IPs
+- **Result**: Ingress not accessible from outside the cluster
+
+#### **The Solution:**
+- **minikube tunnel**: Creates network tunnel to expose ingress
+- **Maps external ports**: 80/443 → internal cluster ports
+- **Simulates LoadBalancer**: Makes ingress accessible locally
+
+### **How to Test Ingress with Tunnel:**
+
+#### **Step 1: Start Minikube Tunnel**
+```bash
+# In a NEW terminal window/tab
+minikube tunnel
+
+# This will ask for sudo password
+# Keep this terminal running - don't close it
+```
+
+**Expected Output:**
+```
+✅  Tunnel successfully started
+📌  NOTE: Please do not close this terminal as this process must stay alive for the tunnel to be accessible ...
+❗  The service/ingress board-service-ingress requires privileged ports to be exposed: [80 443]
+🔑  sudo permission will be asked for it.
+🏃  Starting tunnel for service board-service-ingress.
+```
+
+#### **Step 2: Verify Tunnel is Running**
+```bash
+# Check tunnel processes
+ps aux | grep "minikube tunnel" | grep -v grep
+
+# Should show tunnel process running
+```
+
+#### **Step 3: Test Ingress Access**
+```bash
+# Test frontend (root path)
+curl http://board-service.local/
+
+# Test backend health
+curl http://board-service.local/health
+
+# Test backend API
+curl http://board-service.local/api/users
+```
+
+### **Understanding Host Headers and Ingress Routing:**
+
+#### **The Key Concept: Ingress Routes by HOST, Not IP**
+
+Ingress controllers use the **HTTP Host header** to determine which routing rules to apply, not the IP address. This is crucial for understanding how ingress works.
+
+#### **Two Access Methods:**
+
+##### **Method 1: Domain Access (Recommended)**
+```bash
+curl http://board-service.local/health
+curl http://board-service.local/
+curl http://board-service.local/api/users
+```
+
+**Why this works:**
+- **Domain**: `board-service.local` → Ingress knows which hostname
+- **No headers needed**: Domain provides the routing information
+- **Clean and intuitive**: Just like production environments
+
+##### **Method 2: IP Access with Host Header**
+```bash
+curl -H "Host: board-service.local" http://127.0.0.1/health
+curl -H "Host: board-service.local" http://127.0.0.1/
+curl -H "Host: board-service.local" http://127.0.0.1/api/users
+```
+
+**Why Host header is required:**
+- **IP**: `127.0.0.1` → Ingress doesn't know which hostname
+- **Host header**: `board-service.local` → Tells ingress which routing rules to use
+- **More explicit**: Useful for scripts and automation
+
+#### **What Happens Without Host Header:**
+```bash
+# This will NOT work properly
+curl http://127.0.0.1/health
+
+# Result: Ingress doesn't know which hostname you want
+# May route to default backend or return 404
+```
+
+### **How Ingress Routing Actually Works:**
+
+#### **Ingress Controller Logic:**
+```
+1. Request arrives at ingress controller
+2. Controller extracts Host header from request
+3. Controller looks up routing rules for that hostname
+4. Controller routes request to appropriate service
+5. Service forwards to Pods
+```
+
+#### **Our Ingress Configuration:**
+```yaml
+rules:
+- host: board-service.local          # ← This is the key!
+  http:
+    paths:
+    - path: /                        # Frontend
+      backend: board-frontend-service
+    - path: /api                     # Backend API
+      backend: board-backend-service
+    - path: /health                  # Backend health
+      backend: board-backend-service
+```
+
+#### **Routing Examples:**
+```
+Request: GET http://board-service.local/health
+Host: board-service.local
+Path: /health
+Result: Routes to board-backend-service
+
+Request: GET http://board-service.local/
+Host: board-service.local  
+Path: /
+Result: Routes to board-frontend-service
+
+Request: GET http://board-service.local/api/users
+Host: board-service.local
+Path: /api/users
+Result: Routes to board-backend-service
+```
+
+### **Testing Commands Reference:**
+
+#### **Frontend Testing:**
+```bash
+# Test main page
+curl http://board-service.local/
+
+# Test with verbose output
+curl -v http://board-service.local/
+
+# Test with custom User-Agent
+curl -H "User-Agent: Mozilla/5.0" http://board-service.local/
+```
+
+#### **Backend Testing:**
+```bash
+# Test health endpoint
+curl http://board-service.local/health
+
+# Test API endpoints
+curl http://board-service.local/api/users
+curl http://board-service.local/api/posts
+
+# Test with JSON response
+curl -H "Accept: application/json" http://board-service.local/health
+```
+
+#### **Troubleshooting Ingress:**
+```bash
+# Check ingress status
+kubectl get ingress -n board-service
+
+# Check ingress controller logs
+kubectl logs -n ingress-nginx -l app.kubernetes.io/component=controller
+
+# Check if tunnel is running
+ps aux | grep "minikube tunnel" | grep -v grep
+
+# Test tunnel connectivity
+curl -H "Host: board-service.local" http://127.0.0.1/health
+```
+
+### **Common Ingress Issues & Solutions:**
+
+#### **Issue 1: "Connection Refused"**
+**Cause**: Tunnel not running or ingress controller not ready
+**Solution**: 
+```bash
+# Start tunnel in new terminal
+minikube tunnel
+
+# Check ingress controller
+kubectl get pods -n ingress-nginx
+```
+
+#### **Issue 2: "404 Not Found"**
+**Cause**: Incorrect path routing or service not ready
+**Solution**:
+```bash
+# Check service endpoints
+kubectl get endpoints -n board-service
+
+# Check ingress configuration
+kubectl get ingress -n board-service -o yaml
+```
+
+#### **Issue 3: "Host Not Found"**
+**Cause**: Hosts file not updated or tunnel not working
+**Solution**:
+```bash
+# Update hosts file
+echo "$(minikube ip) board-service.local" | sudo tee -a /etc/hosts
+
+# Verify tunnel is running
+ps aux | grep "minikube tunnel"
+```
+
+### **Production vs Development:**
+
+#### **Development (Minikube):**
+- **Access**: `http://board-service.local/*`
+- **Tunnel**: Required for ingress access
+- **Ports**: 80/443 (privileged, requires sudo)
+
+#### **Production (EKS/GKE):**
+- **Access**: `https://yourdomain.com/*`
+- **LoadBalancer**: Cloud provider handles external access
+- **Ports**: 80/443 (handled by cloud infrastructure)
+
+**The beauty of this setup is that your ingress configuration works the same way in both environments!** 🚀
+```
+
 ## 🔧 **Troubleshooting Guide**
 
 ### **Common Issues & Solutions:**

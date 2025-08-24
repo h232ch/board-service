@@ -4,7 +4,6 @@ metadata:
   name: board-service-ingress
   namespace: board-service
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   ingressClassName: nginx
