@@ -16,14 +16,25 @@ A full-stack board application with React frontend and Node.js backend.
 ```
 ├── frontend/          # React application
 ├── backend/           # Node.js Express API
-├── docker-compose.yml # Docker services orchestration
-├── frontend/Dockerfile # Frontend container configuration
-└── backend/Dockerfile  # Backend container configuration
+├── docker-compose.yml # Docker services orchestration with pre-built images
+├── frontend/Dockerfile # Frontend container configuration (for local builds)
+└── backend/Dockerfile  # Backend container configuration (for local builds)
 ```
+
+## Docker Hub Images
+
+This project uses pre-built Docker images from Docker Hub for easy deployment:
+
+- **Backend**: `dnwn7166/board-backend:latest`
+- **Frontend**: `dnwn7166/board-frontend:latest`
+
+These images are automatically pulled when running `docker compose up` and include all necessary dependencies and optimizations.
+
+**⚠️ Security Note**: The `docker-compose.yml` file now uses environment variables from `backend/.env` instead of hardcoded credentials. Make sure to create a `.env` file in the `backend/` directory with your actual MongoDB URI and JWT secret before running the containers.
 
 ## Environment Setup
 
-### Backend (.env file)
+### Backend Directory (.env file)
 
 Create a `.env` file in the `backend/` directory:
 
@@ -34,28 +45,38 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=tru
 # JWT Secret
 JWT_SECRET=your_super_secret_jwt_key_here_change_this_in_production
 
-# Server Configuration
-PORT=8080
-NODE_ENV=development
-
-# CORS Configuration
-FRONTEND_URL=http://localhost:3000
+# Node Environment
+NODE_ENV=production
 ```
 
 ### Frontend
 
 No environment variables required for basic setup.
 
-## Docker Setup
+### .env File Structure
 
-### 1. Build and run with Docker Compose (Recommended)
+Your `.env` file should contain:
 
 ```bash
-# Build and start all services
-docker compose up --build
+MONGODB_URI=your_actual_mongodb_connection_string
+JWT_SECRET=your_actual_jwt_secret_key
+NODE_ENV=production
+```
+
+**Important**: Never commit your `.env` file to version control. It should already be in your `.gitignore` file.
+
+## Docker Setup
+
+### 1. Run with Docker Compose (Recommended)
+
+**Prerequisite**: Create a `.env` file in the `backend/` directory with your MongoDB URI and JWT secret.
+
+```bash
+# Start all services using pre-built images
+docker compose up
 
 # Run in background
-docker compose up -d --build
+docker compose up -d
 
 # Stop all services
 docker compose down
@@ -64,31 +85,33 @@ docker compose down
 docker compose logs -f
 ```
 
-### 2. Individual service build and run
+### 2. Individual service run (using pre-built images)
 
 ```bash
 # Backend
-cd backend
-docker build -t board-backend .
-docker run -p 8080:8080 --env-file .env board-backend
+docker run -p 8080:8080 \
+  -e NODE_ENV=production \
+  -e MONGODB_URI=your_mongodb_uri \
+  -e JWT_SECRET=your_jwt_secret \
+  dnwn7166/board-backend:latest
 
 # Frontend
-cd frontend
-docker build -t board-frontend .
-docker run -p 80:80 board-frontend
+docker run -p 80:80 dnwn7166/board-frontend:latest
 ```
 
 ### 3. Docker Compose Services
 
 The `docker-compose.yml` file orchestrates the following services:
 
-- **backend**: Node.js Express API server (port 8080)
-- **frontend**: React application served by Nginx (port 80)
+- **backend**: Node.js Express API server (port 8080) using pre-built image `dnwn7166/board-backend:latest`
+- **frontend**: React application served by Nginx (port 80) using pre-built image `dnwn7166/board-frontend:latest`
+- **networks**: Custom bridge network for service communication
 
 ### 4. Docker Images
 
-- **Backend**: Node.js 18 Alpine with Express server
-- **Frontend**: Multi-stage build (Node.js build → Nginx serve)
+- **Backend**: Pre-built image `dnwn7166/board-backend:latest` (Node.js 18 Alpine with Express server)
+- **Frontend**: Pre-built image `dnwn7166/board-frontend:latest` (Multi-stage build with Nginx serve)
+- **Network**: Custom bridge network `app-network` for secure service communication
 
 ## Development Setup
 
@@ -146,12 +169,17 @@ npm start
 
 ### 2. Docker Production
 ```bash
-# Production build
-docker compose -f docker-compose.prod.yml up --build
+# Production deployment (using pre-built images)
+docker compose up -d
 
 # Or use individual containers
-docker build -t board-backend-prod ./backend
-docker build -t board-frontend-prod ./frontend
+docker run -d -p 8080:8080 \
+  -e NODE_ENV=production \
+  -e MONGODB_URI=your_production_mongodb_uri \
+  -e JWT_SECRET=your_production_jwt_secret \
+  dnwn7166/board-backend:latest
+
+docker run -d -p 80:80 dnwn7166/board-frontend:latest
 ```
 
 ### 3. Nginx Configuration
@@ -181,8 +209,9 @@ docker build -t board-frontend-prod ./frontend
 
 1. **Port conflicts**: Ensure ports 80 and 8080 are available
 2. **Permission issues**: Use `sudo` for port 80 on some systems
-3. **Build failures**: Check Dockerfile syntax and dependencies
+3. **Image pull failures**: Check internet connection and Docker Hub access
 4. **Container not starting**: Check logs with `docker compose logs`
+5. **Network issues**: Verify `app-network` bridge network creation
 
 ### Docker Commands
 
@@ -203,11 +232,13 @@ docker compose down --volumes --remove-orphans
 
 ## Performance Optimization
 
-- Multi-stage Docker builds
+- Pre-built Docker images for faster deployment
+- Multi-stage Docker builds (included in images)
 - Nginx static file serving
 - Gzip compression enabled
 - Static asset caching
 - Docker layer caching
+- Custom bridge network for optimized service communication
 
 ## Security Best Practices
 
@@ -216,4 +247,7 @@ docker compose down --volumes --remove-orphans
 - Environment variable protection
 - CORS configuration
 - Input validation
-- JWT token management 
+- JWT token management
+- **Never hardcode credentials in docker-compose.yml**
+- **Use .env files for sensitive configuration**
+- **Ensure .env files are in .gitignore** 
