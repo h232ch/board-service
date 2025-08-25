@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const morgan = require('morgan');
 require('dotenv').config();
 
 const logger = require('./config/logger');
@@ -41,12 +40,6 @@ const corsOptions = {
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
-
-// HTTP request logging middleware using Morgan (skip health checks)
-app.use(morgan('combined', { 
-  stream: logger.stream,
-  skip: (req, res) => req.url === '/health'
-}));
 
 // Custom request logging middleware
 app.use((req, res, next) => {
