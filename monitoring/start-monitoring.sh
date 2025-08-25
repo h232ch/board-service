@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Starting Kafka Monitoring Stack..."
+echo "🚀 Starting Monitoring Stack..."
 
 # Check if Kafka is running
 if ! docker compose -f ../kafka/docker-compose.yml ps | grep -q "kafka.*Up"; then
