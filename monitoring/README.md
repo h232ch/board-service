@@ -254,6 +254,19 @@ curl http://localhost:3000
   docker compose restart grafana
   ```
 
+### **Login/Authentication Issues**
+- If you get "Unauthorized" after password change:
+  ```bash
+  # Reset admin password
+  docker compose exec grafana grafana-cli admin reset-admin-password admin
+  
+  # Or completely reset Grafana (removes all data)
+  docker compose down grafana
+  docker volume rm monitoring_grafana_data
+  docker compose up -d grafana
+  ```
+- Default credentials: **admin/admin**
+
 ## 🎨 Dashboard Examples
 
 ### **Kafka Dashboard**
