@@ -1583,3 +1583,1639 @@ kubectl get storageclass
 **Your Kubernetes deployment now has production-ready persistent logging that matches or exceeds your Docker Compose setup!** 🚀
 
 **The PVC configuration ensures that your application logs are properly persisted, accessible, and scalable across all deployment scenarios.** 🛡️
+
+---
+
+## 🔍 **Vector Sidecar Logging with Kubernetes**
+
+### **1. What is Vector and Configuration**
+
+#### **Vector Overview:**
+Vector is a high-performance, end-to-end observability data pipeline that enables you to collect, transform, and route logs, metrics, and traces to any destination. It's designed for reliability, performance, and operational simplicity.
+
+#### **Key Features:**
+- **High Performance**: Written in Rust for maximum speed and efficiency
+- **Reliable**: Built-in retry logic, backpressure handling, and fault tolerance
+- **Flexible**: Supports 100+ sources, transforms, and sinks
+- **Kubernetes Native**: First-class support for K8s metadata and deployment patterns
+- **Resource Efficient**: Low memory and CPU footprint
+
+#### **Vector Configuration Structure:**
+```yaml
+# Sources: Where data comes from
+sources:
+  nginx_logs:
+    type: "file"
+    include: ["/var/log/app/board-service/nginx/*.log"]
+  
+  backend_logs:
+    type: "file"
+    include: ["/var/log/app/board-service/nodejs/*.log"]
+
+# Transforms: How data is processed
+transforms:
+  parse_nginx:
+    type: "remap"
+    inputs: ["nginx_logs"]
+    source: |
+      # VRL (Vector Remap Language) for log parsing
+      parsed = parse_nginx_log!(.message, "combined")
+      .timestamp = parsed.timestamp
+      .remote_addr = parsed.remote_addr
+
+# Sinks: Where data goes
+sinks:
+  json_console:
+    type: "console"
+    inputs: ["add_metadata"]
+    encoding:
+      codec: "json"
+      timestamp_format: "rfc3339"
+```
+
+#### **JSON Output Example:**
+```json
+{
+  "timestamp": "2025-08-25T05:54:29Z",
+  "cluster": "minikube",
+  "component": "backend",
+  "environment": "development",
+  "level": "info",
+  "message": "GET /health",
+  "method": "GET",
+  "url": "/health",
+  "ip": "10.244.0.1",
+  "kubernetes": {
+    "container_name": "vector-sidecar",
+    "namespace": "board-service",
+    "pod_name": "board-backend-dd78b9fdb-mx8mt"
+  },
+  "vector_version": "0.35.0"
+}
+```
+
+#### **Kafka Output Configuration:**
+```yaml
+sinks:
+  kafka_output:
+    type: "kafka"
+    inputs: ["add_metadata"]
+    bootstrap_servers: ["kafka:9092"]
+    topic: "board-service-logs"
+    encoding:
+      codec: "json"
+    compression: "gzip"
+    # Additional Kafka options
+    acks: "all"
+    retries: 3
+    batch_size: 1000
+    linger_ms: 100
+```
+
+### **2. How to Create Vector with K8s Sidecar**
+
+#### **Step 1: Create Vector ConfigMap**
+```yaml
+# k8s/vector-sidecar-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-sidecar-config
+  namespace: board-service
+data:
+  vector.yaml: |
+    # Vector configuration here
+    sources:
+      nginx_logs:
+        type: "file"
+        include: ["/var/log/app/board-service/nginx/*.log"]
+```
+
+#### **Step 2: Update Deployments with Sidecar**
+```yaml
+# In frontend-deployment.yaml and backend-deployment.yaml
+spec:
+  template:
+    spec:
+      containers:
+      # Main application container
+      - name: board-frontend
+        # ... existing config ...
+      
+      # Vector sidecar container
+      - name: vector-sidecar
+        image: timberio/vector:0.35.0-alpine
+        ports:
+        - containerPort: 8686
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: nginx-logs
+          mountPath: /var/log/app/board-service/nginx
+        - name: vector-config
+          mountPath: /etc/vector
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      
+      volumes:
+      - name: vector-config
+        configMap:
+          name: vector-sidecar-config
+```
+
+#### **Step 3: Apply Configuration**
+```bash
+# Apply Vector ConfigMap
+kubectl apply -f k8s/vector-sidecar-config.yaml
+
+# Apply updated deployments
+kubectl apply -f k8s/frontend-deployment.yaml
+kubectl apply -f k8s/backend-deployment.yaml
+
+# Or apply all at once
+kubectl apply -f k8s/
+```
+
+### **3. How K8s Configuration Relates to Vector Configuration**
+
+#### **The Configuration Flow:**
+```
+K8s ConfigMap → Volume Mount → Vector Container → Vector Process
+     ↓              ↓              ↓              ↓
+vector.yaml → /etc/vector/ → Vector reads → Applies config
+```
+
+#### **Step-by-Step Configuration Relationship:**
+
+**1. Kubernetes ConfigMap Creation:**
+```yaml
+# k8s/vector-sidecar-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-sidecar-config
+  namespace: board-service
+data:
+  vector.yaml: |                    # ← This key becomes the filename
+    api:
+      enabled: true
+      address: "0.0.0.0:8686"
+    
+    sources:
+      nginx_logs:
+        type: "file"
+        include: ["/var/log/app/board-service/nginx/*.log"]
+```
+
+**2. Volume Mount in Deployment:**
+```yaml
+# In deployment.yaml
+spec:
+  template:
+    spec:
+      containers:
+      - name: vector-sidecar
+        # ... other config ...
+        volumeMounts:
+        - name: vector-config          # ← References volume name
+          mountPath: /etc/vector      # ← Where Vector expects config
+      
+      volumes:
+      - name: vector-config           # ← Volume name
+        configMap:
+          name: vector-sidecar-config
+          # No items specified = uses default key "vector.yaml"
+```
+
+**3. How Vector Receives the Configuration:**
+
+**Inside the Vector Container:**
+```bash
+# The ConfigMap data becomes files in /etc/vector/
+/etc/vector/
+└── vector.yaml    # ← Contains the actual Vector configuration
+
+# Vector automatically reads /etc/vector/vector.yaml on startup
+```
+
+**4. Vector Configuration File Structure:**
+
+**What Vector Actually Sees:**
+```yaml
+# /etc/vector/vector.yaml (inside the container)
+api:
+  enabled: true
+  address: "0.0.0.0:8686"
+
+sources:
+  nginx_logs:
+    type: "file"
+    include: ["/var/log/app/board-service/nginx/*.log"]
+    read_from: "beginning"
+    ignore_older_secs: 86400
+
+transforms:
+  parse_nginx:
+    type: "remap"
+    inputs: ["nginx_logs"]
+    source: |
+      parsed = parse_nginx_log!(.message, "combined")
+      .timestamp = parsed.timestamp
+      .remote_addr = parsed.remote_addr
+
+sinks:
+  json_console:
+    type: "console"
+    inputs: ["add_metadata"]
+    encoding:
+      codec: "json"
+      timestamp_format: "rfc3339"
+```
+
+#### **Advanced ConfigMap Configuration Options:**
+
+**1. Multiple Configuration Files:**
+```yaml
+# ConfigMap with multiple files
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-sidecar-config
+data:
+  vector.yaml: |                    # Main configuration
+    sources:
+      nginx_logs:
+        type: "file"
+        include: ["/var/log/app/board-service/nginx/*.log"]
+  
+  sources.conf: |                   # Separate sources file
+    nginx_logs:
+      type: "file"
+      include: ["/var/log/app/board-service/nginx/*.log"]
+  
+  transforms.conf: |                # Separate transforms file
+    parse_nginx:
+      type: "remap"
+      inputs: ["nginx_logs"]
+      source: |
+        parsed = parse_nginx_log!(.message, "combined")
+
+# Volume mount with specific items
+volumeMounts:
+- name: vector-config
+  mountPath: /etc/vector
+  readOnly: true
+
+volumes:
+- name: vector-config
+  configMap:
+    name: vector-sidecar-config
+    items:                          # ← Specify which files to mount
+    - key: vector.yaml
+      path: vector.yaml
+    - key: sources.conf
+      path: sources.conf
+    - key: transforms.conf
+      path: transforms.conf
+```
+
+**2. Environment-Specific Configuration:**
+```yaml
+# ConfigMap with environment variables
+data:
+  vector.yaml: |
+    api:
+      enabled: true
+      address: "0.0.0.0:8686"
+    
+    sources:
+      nginx_logs:
+        type: "file"
+        include: ["${LOG_PATH}/nginx/*.log"]  # ← Use env vars
+    
+    sinks:
+      kafka_output:
+        type: "kafka"
+        bootstrap_servers: ["${KAFKA_SERVERS}"]  # ← Use env vars
+        topic: "${KAFKA_TOPIC}"
+
+# Deployment with environment variables
+containers:
+- name: vector-sidecar
+  env:
+  - name: LOG_PATH
+    value: "/var/log/app/board-service"
+  - name: KAFKA_SERVERS
+    value: "kafka:9092"
+  - name: KAFKA_TOPIC
+    value: "board-service-logs"
+```
+
+#### **How Vector Reads and Validates Configuration:**
+
+**1. Configuration Loading Process:**
+```bash
+# Vector startup sequence:
+1. Container starts
+2. Vector process starts
+3. Reads /etc/vector/vector.yaml
+4. Validates configuration syntax
+5. Loads sources, transforms, and sinks
+6. Starts processing if validation passes
+```
+
+**2. Configuration Validation:**
+```bash
+# Vector validates:
+- YAML syntax
+- VRL (Vector Remap Language) syntax
+- Source configurations
+- Transform configurations  
+- Sink configurations
+- Input/output relationships
+- File paths and permissions
+```
+
+**3. Error Handling:**
+```bash
+# If configuration is invalid:
+- Vector exits with error code
+- Pod goes into CrashLoopBackOff
+- kubectl logs shows validation errors
+- Need to fix ConfigMap and restart pods
+```
+
+#### **Verifying Configuration Application:**
+
+**1. Check What Vector Actually Sees:**
+```bash
+# Verify the configuration file exists
+kubectl exec <pod-name> -c vector-sidecar -n board-service -- ls -la /etc/vector/
+
+# View the actual configuration Vector is using
+kubectl exec <pod-name> -c vector-sidecar -n board-service -- cat /etc/vector/vector.yaml
+
+# Check if Vector can parse the configuration
+kubectl exec <pod-name> -c vector-sidecar -n board-service -- vector validate --config /etc/vector/vector.yaml
+```
+
+**2. Debug Configuration Issues:**
+```bash
+# Check Vector startup logs for configuration errors
+kubectl logs <pod-name> -c vector-sidecar -n board-service | grep -i "config\|error"
+
+# Verify file permissions
+kubectl exec <pod-name> -c vector-sidecar -n board-service -- ls -la /etc/vector/
+
+# Test Vector configuration validation
+kubectl exec <pod-name> -c vector-sidecar -n board-service -- vector --config /etc/vector/vector.yaml --dry-run
+```
+
+#### **Configuration Hot-Reloading (Advanced):**
+
+**1. Enable Vector Hot-Reload:**
+```yaml
+# In vector.yaml
+api:
+  enabled: true
+  address: "0.0.0.0:8686"
+  # Enable hot-reloading
+  hot_reload: true
+
+# In deployment
+volumeMounts:
+- name: vector-config
+  mountPath: /etc/vector
+  readOnly: true  # Required for hot-reload
+```
+
+**2. Update Configuration Without Pod Restart:**
+```bash
+# Update ConfigMap
+kubectl apply -f k8s/vector-sidecar-config.yaml
+
+# Vector will automatically reload configuration
+# Check Vector logs for reload confirmation
+kubectl logs <pod-name> -c vector-sidecar -n board-service --tail=10
+```
+
+#### **Configuration Best Practices:**
+
+**1. File Organization:**
+```yaml
+# Recommended structure:
+data:
+  vector.yaml: |                    # Main configuration
+    api:
+      enabled: true
+      address: "0.0.0.0:8686"
+    
+    # Include other files
+    include: ["/etc/vector/sources/*.conf", "/etc/vector/transforms/*.conf"]
+  
+  sources/nginx.conf: |             # Modular sources
+    nginx_logs:
+      type: "file"
+      include: ["/var/log/app/board-service/nginx/*.log"]
+  
+  transforms/nginx.conf: |          # Modular transforms
+    parse_nginx:
+      type: "remap"
+      inputs: ["nginx_logs"]
+      source: |
+        parsed = parse_nginx_log!(.message, "combined")
+```
+
+**2. Environment-Specific Configs:**
+```yaml
+# Development vs Production
+data:
+  vector-dev.yaml: |                # Development config
+    sinks:
+      json_console:
+        type: "console"
+        inputs: ["add_metadata"]
+  
+  vector-prod.yaml: |               # Production config
+    sinks:
+      kafka_output:
+        type: "kafka"
+        bootstrap_servers: ["kafka:9092"]
+        topic: "board-service-logs"
+```
+
+**3. Configuration Validation:**
+```bash
+# Pre-deployment validation
+# Create a temporary pod to test configuration
+kubectl run vector-test --image=timberio/vector:0.35.0-alpine --rm -it --restart=Never -- sh
+
+# Copy and test configuration
+# Exit when done
+exit
+```
+
+---
+
+## 🔧 **Configuration Troubleshooting Guide**
+
+### **Common Issues & Solutions:**
+
+#### **1. Pods Not Starting**
+```bash
+# Check Pod status
+kubectl get pods -n board-service
+
+# Check Pod events
+kubectl describe pod <pod-name> -n board-service
+
+# Check Pod logs
+kubectl logs <pod-name> -n board-service
+```
+
+**Common causes:**
+- Resource limits too low
+- Image pull failures
+- Environment variable issues
+- Health check failures
+
+#### **2. Services Not Accessible**
+```bash
+# Check service endpoints
+kubectl get endpoints -n board-service
+
+# Check service details
+kubectl describe service <service-name> -n board-service
+```
+
+**Common causes:**
+- Pod labels don't match service selectors
+- Pods not ready
+- Port mismatches
+
+#### **3. Ingress Not Working**
+```bash
+# Check ingress status
+kubectl get ingress -n board-service
+
+# Check ingress controller
+kubectl get pods -n ingress-nginx
+```
+
+**Common causes:**
+- Ingress controller not running
+- Minikube tunnel not started
+- Hosts file not updated
+
+### **Debug Commands:**
+
+```bash
+# Get detailed resource information
+kubectl describe <resource-type> <resource-name> -n board-service
+
+# View resource events
+kubectl get events -n board-service --sort-by='.lastTimestamp'
+
+# Check resource YAML
+kubectl get <resource-type> <resource-name> -n board-service -o yaml
+
+# Port forward for direct access
+kubectl port-forward service/<service-name> <local-port>:<service-port> -n board-service
+```
+
+## 🚀 **Production Considerations**
+
+### **For EKS Deployment:**
+
+1. **Image Tags**: Use specific versions instead of `latest`
+2. **Resource Limits**: Adjust based on actual usage patterns
+3. **Monitoring**: Set up Prometheus, Grafana, and alerting
+4. **Autoscaling**: Configure HPA (Horizontal Pod Autoscaler)
+5. **SSL/TLS**: Proper certificate management
+6. **Network Policies**: Restrict pod-to-pod communication
+7. **Backup**: Persistent data backup strategies
+
+### **Security Best Practices:**
+
+1. **RBAC**: Role-based access control
+2. **Pod Security Standards**: Follow security policies
+3. **Image Scanning**: Vulnerability scanning
+4. **Secret Rotation**: Regular credential updates
+5. **Network Policies**: Restrict traffic flow
+6. **Audit Logging**: Monitor cluster activities
+
+## 📚 **Learning Resources**
+
+### **Kubernetes Concepts:**
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
+- [Kubernetes Concepts](https://kubernetes.io/docs/concepts/)
+- [Kubernetes Tutorials](https://kubernetes.io/docs/tutorials/)
+
+### **Minikube:**
+- [Minikube Documentation](https://minikube.sigs.k8s.io/docs/)
+- [Minikube Start Guide](https://minikube.sigs.k8s.io/docs/start/)
+
+### **Kubectl:**
+- [Kubectl Reference](https://kubernetes.io/docs/reference/kubectl/)
+- [Kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+
+## 🎯 **Next Steps**
+
+### **Immediate:**
+1. ✅ Deploy to Minikube (Completed)
+2. ✅ Test all services (Completed)
+3. ✅ Verify connectivity (Completed)
+
+### **Short Term:**
+1. **Customize Configuration**: Modify resource limits, replica counts
+2. **Add Monitoring**: Set up basic monitoring and logging
+3. **Test Scaling**: Test horizontal scaling capabilities
+
+### **Long Term:**
+1. **EKS Migration**: Adapt manifests for AWS EKS
+2. **CI/CD Pipeline**: Automate deployment process
+3. **Production Hardening**: Security, monitoring, backup strategies
+
+## 🏆 **What You've Learned**
+
+By completing this deployment, you now understand:
+
+1. **Kubernetes Architecture**: How Pods, Services, and Ingress work together
+2. **Resource Management**: How to define and manage compute resources
+3. **Configuration Management**: How to use ConfigMaps and Secrets
+4. **Networking**: How services communicate and how to expose them externally
+5. **Deployment Strategies**: How to deploy and manage application updates
+6. **Health Monitoring**: How to implement health checks and monitoring
+7. **Local Development**: How to use Minikube for local Kubernetes development
+
+This foundation will serve you well as you move to production environments like EKS!
+
+---
+
+## 🔒 **Persistent Volume Claims (PVC) Configuration & Theory**
+
+### **🚀 What We Accomplished**
+
+In this session, we successfully implemented **persistent storage for application logs** in your Kubernetes deployment, ensuring that:
+- ✅ **Frontend Nginx logs** persist across pod restarts
+- ✅ **Backend Node.js logs** persist across pod restarts  
+- ✅ **Volume mounts** work seamlessly with existing deployments
+- ✅ **Storage provisioning** is automated and scalable
+- ✅ **Logging functionality** is production-ready
+
+---
+
+## 📚 **Theory of Persistent Volume Claims (PVC)**
+
+### **1. What is a PVC?**
+
+**Persistent Volume Claim (PVC)** is a request for storage by a user. It's like a "storage reservation" that:
+- **Requests storage** from the cluster
+- **Specifies requirements** (size, access mode, storage class)
+- **Gets bound** to a Persistent Volume (PV)
+- **Provides persistent storage** to pods
+
+### **2. PVC vs Local Storage**
+
+#### **❌ Local Storage (Docker Compose):**
+```yaml
+# docker-compose.yml
+volumes:
+  - /var/log/app/board-service/nginx:/var/log/app/board-service/nginx
+  - /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs
+```
+- **Direct host mounting** to local filesystem
+- **Accessible from host** machine
+- **Lost on host restart** or filesystem changes
+- **Not portable** across different environments
+
+#### **✅ PVC Storage (Kubernetes):**
+```yaml
+# k8s/persistent-volume-claims.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nginx-logs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+```
+- **Cluster-managed storage** independent of host
+- **Persistent across** pod restarts and deployments
+- **Portable** across different K8s environments
+- **Scalable** and enterprise-grade
+
+### **3. Storage Architecture in Minikube**
+
+```bash
+Your Mac (Host) → Docker Desktop → Minikube Container → PVC Storage
+```
+
+**Storage Location:**
+- **NOT on your local disk** (`/var/log/app/board-service/`)
+- **INSIDE minikube container** (`/var/lib/minikube/volumes/`)
+- **Managed by K8s** storage provisioner
+- **Isolated from host** filesystem
+
+---
+
+## 🛠️ **How to Configure PVCs**
+
+### **1. Create PVC Definitions**
+
+```yaml
+# k8s/persistent-volume-claims.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nginx-logs-pvc
+  namespace: board-service
+  labels:
+    app: board-frontend
+    component: logs
+spec:
+  accessModes:
+    - ReadWriteOnce  # Single node read/write
+  resources:
+    requests:
+      storage: 1Gi   # Request 1GB of storage
+  storageClassName: standard  # Use available storage class
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backend-logs-pvc
+  namespace: board-service
+  labels:
+    app: board-backend
+    component: logs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+```
+
+### **2. Update Deployments with Volume Mounts**
+
+#### **Frontend Deployment:**
+```yaml
+# k8s/frontend-deployment.yaml
+spec:
+  template:
+    spec:
+      containers:
+      - name: board-frontend
+        # ... existing config ...
+        volumeMounts:
+        - name: nginx-logs
+          mountPath: /var/log/app/board-service/nginx
+      volumes:
+      - name: nginx-logs
+        persistentVolumeClaim:
+          claimName: nginx-logs-pvc
+```
+
+#### **Backend Deployment:**
+```yaml
+# k8s/backend-deployment.yaml
+spec:
+  template:
+    spec:
+      containers:
+      - name: board-backend
+        # ... existing config ...
+        volumeMounts:
+        - name: backend-logs
+          mountPath: /var/log/app/board-service/nodejs
+      volumes:
+      - name: backend-logs
+        persistentVolumeClaim:
+          claimName: backend-logs-pvc
+```
+
+### **3. Update Kustomization**
+
+```yaml
+# k8s/kustomization.yaml
+resources:
+- namespace.yaml
+- configmap.yaml
+- secret.yaml
+- persistent-volume-claims.yaml  # ← Add this line
+- backend-deployment.yaml
+- backend-service.yaml
+- frontend-deployment.yaml
+- frontend-service.yaml
+- ingress.yaml
+```
+
+---
+
+## 🔗 **How PVCs Work with Existing Configuration**
+
+### **1. Integration with Deployments**
+
+#### **Before PVC (Ephemeral Storage):**
+```yaml
+# Pods wrote logs to container filesystem
+# Logs lost on pod restart
+# No persistent storage
+```
+
+#### **After PVC (Persistent Storage):**
+```yaml
+# Pods write logs to mounted PVC
+# Logs survive pod restarts
+# Storage persists across deployments
+```
+
+### **2. Service Discovery Unchanged**
+
+```yaml
+# k8s/backend-service.yaml - NO CHANGES NEEDED
+apiVersion: v1
+kind: Service
+metadata:
+  name: board-backend-service  # Service name unchanged
+spec:
+  selector:
+    app: board-backend         # Selector unchanged
+  ports:
+  - port: 8080                # Port unchanged
+```
+
+### **3. Ingress Configuration Unchanged**
+
+```yaml
+# k8s/ingress.yaml - NO CHANGES NEEDED
+spec:
+  rules:
+  - host: board-service.local
+    http:
+      paths:
+      - path: /api
+        backend:
+          service:
+            name: board-backend-service  # Routes unchanged
+            port: 8080
+```
+
+### **4. Resource Management Enhanced**
+
+```yaml
+# Deployments now include:
+spec:
+  template:
+    spec:
+      containers:
+      - name: board-frontend
+        resources:
+          requests:
+            memory: "64Mi"     # CPU/Memory unchanged
+            cpu: "50m"
+        volumeMounts:          # ← NEW: Volume mounts
+        - name: nginx-logs
+          mountPath: /var/log/app/board-service/nginx
+```
+
+---
+
+## 📊 **How Logging Works with PVCs**
+
+### **1. Log Flow Architecture**
+
+```bash
+Application → Container Filesystem → Volume Mount → PVC → Persistent Storage
+```
+
+#### **Frontend Logging:**
+```nginx
+# nginx.conf
+location /api/ {
+    access_log /var/log/app/board-service/nginx/access.log main;
+    # ↑ This path is now mounted to PVC
+}
+```
+
+#### **Backend Logging:**
+```javascript
+// logger.js
+const logDir = '/var/log/app/board-service/nodejs';
+// ↑ This path is now mounted to PVC
+```
+
+### **2. Log Persistence Benefits**
+
+#### **✅ Across Pod Restarts:**
+```bash
+# Pod restarts, logs remain
+kubectl delete pod <pod-name> -n board-service
+kubectl get pods -n board-service  # New pod starts
+kubectl exec -it <new-pod> -- ls -la /var/log/app/board-service/nginx/
+# ↑ Logs still exist!
+```
+
+#### **✅ Across Deployments:**
+```bash
+# Update deployment, logs persist
+kubectl set image deployment/board-frontend board-frontend=new-image:tag
+kubectl get pods -n board-service  # New pods start
+# ↑ All previous logs remain accessible
+```
+
+#### **✅ Across Scaling Events:**
+```bash
+# Scale up/down, logs shared
+kubectl scale deployment board-frontend --replicas=3
+# ↑ All pods share same PVC, logs accessible from any pod
+```
+
+### **3. Log Access Methods**
+
+#### **From Inside Pods:**
+```bash
+# Frontend logs
+kubectl exec -it <frontend-pod> -- tail -f /var/log/app/board-service/nginx/access.log
+
+# Backend logs
+kubectl exec -it <backend-pod> -- tail -f /var/log/app/board-service/nodejs/access.log
+```
+
+#### **Copy Logs to Local (If needed):**
+```bash
+# Copy nginx logs
+kubectl cp board-service/<frontend-pod>:/var/log/app/board-service/nginx/access.log ./nginx-access.log
+
+# Copy backend logs
+kubectl cp board-service/<backend-pod>:/var/log/app/board-service/nodejs/access.log ./backend-access.log
+```
+
+---
+
+## 🧪 **Testing PVC Configuration**
+
+### **1. Deploy and Verify**
+
+```bash
+# Apply configuration
+kubectl apply -f k8s/
+
+# Check PVC status
+kubectl get pvc -n board-service
+
+# Check pod status
+kubectl get pods -n board-service
+
+# Verify volume mounts
+kubectl describe pod <pod-name> -n board-service | grep -A 10 "Volumes:"
+```
+
+### **2. Test Logging Functionality**
+
+```bash
+# Port forward to test
+kubectl port-forward service/board-frontend-service 8080:80 -n board-service &
+
+# Test frontend
+curl -I http://localhost:8080
+
+# Test API
+curl -I http://localhost:8080/api/posts
+
+# Check logs
+kubectl exec -it <frontend-pod> -- tail -5 /var/log/app/board-service/nginx/access.log
+```
+
+### **3. Verify Persistence**
+
+```bash
+# Delete a pod
+kubectl delete pod <pod-name> -n board-service
+
+# Wait for new pod
+kubectl get pods -n board-service
+
+# Verify logs still exist
+kubectl exec -it <new-pod> -- ls -la /var/log/app/board-service/nginx/
+```
+
+---
+
+## 🎯 **Production Benefits**
+
+### **1. Enterprise-Grade Logging**
+- **Log retention** across deployments
+- **Audit trails** for compliance
+- **Security monitoring** capabilities
+- **Performance analysis** over time
+
+### **2. Scalability & Reliability**
+- **Multiple replicas** share same storage
+- **Load balancing** with persistent data
+- **Rolling updates** preserve logs
+- **Disaster recovery** capabilities
+
+### **3. Operational Excellence**
+- **Centralized logging** management
+- **Easy troubleshooting** across pods
+- **Consistent monitoring** setup
+- **Standardized logging** practices
+
+---
+
+## 🚨 **Common Issues & Solutions**
+
+### **1. PVC Pending Status**
+
+#### **Problem:**
+```bash
+NAME               STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS
+nginx-logs-pvc     Pending                                                     <unset>
+```
+
+#### **Solution:**
+```bash
+# Check available storage classes
+kubectl get storageclass
+
+# Update PVC to use available storage class
+storageClassName: standard  # Instead of ""
+```
+
+### **2. Pods Stuck in Pending**
+
+#### **Problem:**
+```bash
+NAME                              READY   STATUS    RESTARTS   AGE
+board-frontend-xxx-xxx            0/1     Pending   0          1m
+```
+
+#### **Solution:**
+```bash
+# Check PVC binding
+kubectl get pvc -n board-service
+
+# Ensure PVCs are Bound before pods start
+kubectl describe pod <pod-name> -n board-service
+```
+
+### **3. Volume Mount Errors**
+
+#### **Problem:**
+```bash
+# Pod fails to start with volume mount errors
+```
+
+#### **Solution:**
+```bash
+# Verify PVC exists and is bound
+kubectl get pvc -n board-service
+
+# Check PVC details
+kubectl describe pvc <pvc-name> -n board-service
+
+# Verify storage class availability
+kubectl get storageclass
+```
+
+---
+
+## 🎉 **Summary of Accomplishments**
+
+### **✅ What We Successfully Implemented:**
+
+1. **Persistent Volume Claims**: Created PVCs for both frontend and backend logs
+2. **Volume Mounts**: Integrated PVCs with existing deployments
+3. **Storage Configuration**: Configured proper storage classes for minikube
+4. **Logging Persistence**: Ensured logs survive pod restarts and deployments
+5. **Production Readiness**: Achieved enterprise-grade logging capabilities
+
+### **✅ Technical Achievements:**
+
+- **PVC Creation**: `nginx-logs-pvc` and `backend-logs-pvc`
+- **Volume Integration**: Seamless integration with existing K8s manifests
+- **Storage Provisioning**: Automated storage allocation via storage classes
+- **Log Persistence**: Complete log retention across all pod lifecycle events
+- **Scalability**: Support for multiple replicas with shared storage
+
+### **✅ Operational Benefits:**
+
+- **Consistent Logging**: Same logging behavior across all environments
+- **Easy Troubleshooting**: Persistent logs for debugging and monitoring
+- **Security Compliance**: Complete audit trails for security monitoring
+- **Performance Analysis**: Historical log data for optimization
+- **Production Standards**: Enterprise-grade logging infrastructure
+
+**Your Kubernetes deployment now has production-ready persistent logging that matches or exceeds your Docker Compose setup!** 🚀
+
+**The PVC configuration ensures that your application logs are properly persisted, accessible, and scalable across all deployment scenarios.** 🛡️
+
+---
+
+## 🔍 **Vector Sidecar Logging with Kubernetes**
+
+### **1. What is Vector and Configuration**
+
+#### **Vector Overview:**
+Vector is a high-performance, end-to-end observability data pipeline that enables you to collect, transform, and route logs, metrics, and traces to any destination. It's designed for reliability, performance, and operational simplicity.
+
+#### **Key Features:**
+- **High Performance**: Written in Rust for maximum speed and efficiency
+- **Reliable**: Built-in retry logic, backpressure handling, and fault tolerance
+- **Flexible**: Supports 100+ sources, transforms, and sinks
+- **Kubernetes Native**: First-class support for K8s metadata and deployment patterns
+- **Resource Efficient**: Low memory and CPU footprint
+
+#### **Vector Configuration Structure:**
+```yaml
+# Sources: Where data comes from
+sources:
+  nginx_logs:
+    type: "file"
+    include: ["/var/log/app/board-service/nginx/*.log"]
+  
+  backend_logs:
+    type: "file"
+    include: ["/var/log/app/board-service/nodejs/*.log"]
+
+# Transforms: How data is processed
+transforms:
+  parse_nginx:
+    type: "remap"
+    inputs: ["nginx_logs"]
+    source: |
+      # VRL (Vector Remap Language) for log parsing
+      parsed = parse_nginx_log!(.message, "combined")
+      .timestamp = parsed.timestamp
+      .remote_addr = parsed.remote_addr
+
+# Sinks: Where data goes
+sinks:
+  json_console:
+    type: "console"
+    inputs: ["add_metadata"]
+    encoding:
+      codec: "json"
+      timestamp_format: "rfc3339"
+```
+
+#### **JSON Output Example:**
+```json
+{
+  "timestamp": "2025-08-25T05:54:29Z",
+  "cluster": "minikube",
+  "component": "backend",
+  "environment": "development",
+  "level": "info",
+  "message": "GET /health",
+  "method": "GET",
+  "url": "/health",
+  "ip": "10.244.0.1",
+  "kubernetes": {
+    "container_name": "vector-sidecar",
+    "namespace": "board-service",
+    "pod_name": "board-backend-dd78b9fdb-mx8mt"
+  },
+  "vector_version": "0.35.0"
+}
+```
+
+#### **Kafka Output Configuration:**
+```yaml
+sinks:
+  kafka_output:
+    type: "kafka"
+    inputs: ["add_metadata"]
+    bootstrap_servers: ["kafka:9092"]
+    topic: "board-service-logs"
+    encoding:
+      codec: "json"
+    compression: "gzip"
+    # Additional Kafka options
+    acks: "all"
+    retries: 3
+    batch_size: 1000
+    linger_ms: 100
+```
+
+### **2. How to Create Vector with K8s Sidecar**
+
+#### **Step 1: Create Vector ConfigMap**
+```yaml
+# k8s/vector-sidecar-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-sidecar-config
+  namespace: board-service
+data:
+  vector.yaml: |
+    # Vector configuration here
+    sources:
+      nginx_logs:
+        type: "file"
+        include: ["/var/log/app/board-service/nginx/*.log"]
+```
+
+#### **Step 2: Update Deployments with Sidecar**
+```yaml
+# In frontend-deployment.yaml and backend-deployment.yaml
+spec:
+  template:
+    spec:
+      containers:
+      # Main application container
+      - name: board-frontend
+        # ... existing config ...
+      
+      # Vector sidecar container
+      - name: vector-sidecar
+        image: timberio/vector:0.35.0-alpine
+        ports:
+        - containerPort: 8686
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: nginx-logs
+          mountPath: /var/log/app/board-service/nginx
+        - name: vector-config
+          mountPath: /etc/vector
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      
+      volumes:
+      - name: vector-config
+        configMap:
+          name: vector-sidecar-config
+```
+
+#### **Step 3: Apply Configuration**
+```bash
+# Apply Vector ConfigMap
+kubectl apply -f k8s/vector-sidecar-config.yaml
+
+# Apply updated deployments
+kubectl apply -f k8s/frontend-deployment.yaml
+kubectl apply -f k8s/backend-deployment.yaml
+
+# Or apply all at once
+kubectl apply -f k8s/
+```
+
+### **3. How K8s Configuration Relates to Vector Configuration**
+
+#### **The Configuration Flow:**
+```
+K8s ConfigMap → Volume Mount → Vector Container → Vector Process
+     ↓              ↓              ↓              ↓
+vector.yaml → /etc/vector/ → Vector reads → Applies config
+```
+
+#### **Step-by-Step Configuration Relationship:**
+
+**1. Kubernetes ConfigMap Creation:**
+```yaml
+# k8s/vector-sidecar-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-sidecar-config
+  namespace: board-service
+data:
+  vector.yaml: |                    # ← This key becomes the filename
+    api:
+      enabled: true
+      address: "0.0.0.0:8686"
+    
+    sources:
+      nginx_logs:
+        type: "file"
+        include: ["/var/log/app/board-service/nginx/*.log"]
+```
+
+**2. Volume Mount in Deployment:**
+```yaml
+# In deployment.yaml
+spec:
+  template:
+    spec:
+      containers:
+      - name: vector-sidecar
+        # ... other config ...
+        volumeMounts:
+        - name: vector-config          # ← References volume name
+          mountPath: /etc/vector      # ← Where Vector expects config
+      
+      volumes:
+      - name: vector-config           # ← Volume name
+        configMap:
+          name: vector-sidecar-config
+          # No items specified = uses default key "vector.yaml"
+```
+
+**3. How Vector Receives the Configuration:**
+
+**Inside the Vector Container:**
+```bash
+# The ConfigMap data becomes files in /etc/vector/
+/etc/vector/
+└── vector.yaml    # ← Contains the actual Vector configuration
+
+# Vector automatically reads /etc/vector/vector.yaml on startup
+```
+
+**4. Vector Configuration File Structure:**
+
+**What Vector Actually Sees:**
+```yaml
+# /etc/vector/vector.yaml (inside the container)
+api:
+  enabled: true
+  address: "0.0.0.0:8686"
+
+sources:
+  nginx_logs:
+    type: "file"
+    include: ["/var/log/app/board-service/nginx/*.log"]
+    read_from: "beginning"
+    ignore_older_secs: 86400
+
+transforms:
+  parse_nginx:
+    type: "remap"
+    inputs: ["nginx_logs"]
+    source: |
+      parsed = parse_nginx_log!(.message, "combined")
+      .timestamp = parsed.timestamp
+      .remote_addr = parsed.remote_addr
+
+sinks:
+  json_console:
+    type: "console"
+    inputs: ["add_metadata"]
+    encoding:
+      codec: "json"
+      timestamp_format: "rfc3339"
+```
+
+#### **Advanced ConfigMap Configuration Options:**
+
+**1. Multiple Configuration Files:**
+```yaml
+# ConfigMap with multiple files
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-sidecar-config
+data:
+  vector.yaml: |                    # Main configuration
+    sources:
+      nginx_logs:
+        type: "file"
+        include: ["/var/log/app/board-service/nginx/*.log"]
+  
+  sources.conf: |                   # Separate sources file
+    nginx_logs:
+      type: "file"
+      include: ["/var/log/app/board-service/nginx/*.log"]
+  
+  transforms.conf: |                # Separate transforms file
+    parse_nginx:
+      type: "remap"
+      inputs: ["nginx_logs"]
+      source: |
+        parsed = parse_nginx_log!(.message, "combined")
+
+# Volume mount with specific items
+volumeMounts:
+- name: vector-config
+  mountPath: /etc/vector
+  readOnly: true
+
+volumes:
+- name: vector-config
+  configMap:
+    name: vector-sidecar-config
+    items:                          # ← Specify which files to mount
+    - key: vector.yaml
+      path: vector.yaml
+    - key: sources.conf
+      path: sources.conf
+    - key: transforms.conf
+      path: transforms.conf
+```
+
+**2. Environment-Specific Configuration:**
+```yaml
+# ConfigMap with environment variables
+data:
+  vector.yaml: |
+    api:
+      enabled: true
+      address: "0.0.0.0:8686"
+    
+    sources:
+      nginx_logs:
+        type: "file"
+        include: ["${LOG_PATH}/nginx/*.log"]  # ← Use env vars
+    
+    sinks:
+      kafka_output:
+        type: "kafka"
+        bootstrap_servers: ["${KAFKA_SERVERS}"]  # ← Use env vars
+        topic: "${KAFKA_TOPIC}"
+
+# Deployment with environment variables
+containers:
+- name: vector-sidecar
+  env:
+  - name: LOG_PATH
+    value: "/var/log/app/board-service"
+  - name: KAFKA_SERVERS
+    value: "kafka:9092"
+  - name: KAFKA_TOPIC
+    value: "board-service-logs"
+```
+
+#### **How Vector Reads and Validates Configuration:**
+
+**1. Configuration Loading Process:**
+```bash
+# Vector startup sequence:
+1. Container starts
+2. Vector process starts
+3. Reads /etc/vector/vector.yaml
+4. Validates configuration syntax
+5. Loads sources, transforms, and sinks
+6. Starts processing if validation passes
+```
+
+**2. Configuration Validation:**
+```bash
+# Vector validates:
+- YAML syntax
+- VRL (Vector Remap Language) syntax
+- Source configurations
+- Transform configurations  
+- Sink configurations
+- Input/output relationships
+- File paths and permissions
+```
+
+**3. Error Handling:**
+```bash
+# If configuration is invalid:
+- Vector exits with error code
+- Pod goes into CrashLoopBackOff
+- kubectl logs shows validation errors
+- Need to fix ConfigMap and restart pods
+```
+
+#### **Verifying Configuration Application:**
+
+**1. Check What Vector Actually Sees:**
+```bash
+# Verify the configuration file exists
+kubectl exec <pod-name> -c vector-sidecar -n board-service -- ls -la /etc/vector/
+
+# View the actual configuration Vector is using
+kubectl exec <pod-name> -c vector-sidecar -n board-service -- cat /etc/vector/vector.yaml
+
+# Check if Vector can parse the configuration
+kubectl exec <pod-name> -c vector-sidecar -n board-service -- vector validate --config /etc/vector/vector.yaml
+```
+
+**2. Debug Configuration Issues:**
+```bash
+# Check Vector startup logs for configuration errors
+kubectl logs <pod-name> -c vector-sidecar -n board-service | grep -i "config\|error"
+
+# Verify file permissions
+kubectl exec <pod-name> -c vector-sidecar -n board-service -- ls -la /etc/vector/
+
+# Test Vector configuration validation
+kubectl exec <pod-name> -c vector-sidecar -n board-service -- vector --config /etc/vector/vector.yaml --dry-run
+```
+
+#### **Configuration Hot-Reloading (Advanced):**
+
+**1. Enable Vector Hot-Reload:**
+```yaml
+# In vector.yaml
+api:
+  enabled: true
+  address: "0.0.0.0:8686"
+  # Enable hot-reloading
+  hot_reload: true
+
+# In deployment
+volumeMounts:
+- name: vector-config
+  mountPath: /etc/vector
+  readOnly: true  # Required for hot-reload
+```
+
+**2. Update Configuration Without Pod Restart:**
+```bash
+# Update ConfigMap
+kubectl apply -f k8s/vector-sidecar-config.yaml
+
+# Vector will automatically reload configuration
+# Check Vector logs for reload confirmation
+kubectl logs <pod-name> -c vector-sidecar -n board-service --tail=10
+```
+
+#### **Configuration Best Practices:**
+
+**1. File Organization:**
+```yaml
+# Recommended structure:
+data:
+  vector.yaml: |                    # Main configuration
+    api:
+      enabled: true
+      address: "0.0.0.0:8686"
+    
+    # Include other files
+    include: ["/etc/vector/sources/*.conf", "/etc/vector/transforms/*.conf"]
+  
+  sources/nginx.conf: |             # Modular sources
+    nginx_logs:
+      type: "file"
+      include: ["/var/log/app/board-service/nginx/*.log"]
+  
+  transforms/nginx.conf: |          # Modular transforms
+    parse_nginx:
+      type: "remap"
+      inputs: ["nginx_logs"]
+      source: |
+        parsed = parse_nginx_log!(.message, "combined")
+```
+
+**2. Environment-Specific Configs:**
+```yaml
+# Development vs Production
+data:
+  vector-dev.yaml: |                # Development config
+    sinks:
+      json_console:
+        type: "console"
+        inputs: ["add_metadata"]
+  
+  vector-prod.yaml: |               # Production config
+    sinks:
+      kafka_output:
+        type: "kafka"
+        bootstrap_servers: ["kafka:9092"]
+        topic: "board-service-logs"
+```
+
+**3. Configuration Validation:**
+```bash
+# Pre-deployment validation
+# Create a temporary pod to test configuration
+kubectl run vector-test --image=timberio/vector:0.35.0-alpine --rm -it --restart=Never -- sh
+
+# Copy and test configuration
+# Exit when done
+exit
+```
+
+---
+
+## 🔧 **Configuration Troubleshooting Guide**
+
+### **Common Issues & Solutions:**
+
+#### **1. Pods Not Starting**
+```bash
+# Check Pod status
+kubectl get pods -n board-service
+
+# Check Pod events
+kubectl describe pod <pod-name> -n board-service
+
+# Check Pod logs
+kubectl logs <pod-name> -n board-service
+```
+
+**Common causes:**
+- Resource limits too low
+- Image pull failures
+- Environment variable issues
+- Health check failures
+
+#### **2. Services Not Accessible**
+```bash
+# Check service endpoints
+kubectl get endpoints -n board-service
+
+# Check service details
+kubectl describe service <service-name> -n board-service
+```
+
+**Common causes:**
+- Pod labels don't match service selectors
+- Pods not ready
+- Port mismatches
+
+#### **3. Ingress Not Working**
+```bash
+# Check ingress status
+kubectl get ingress -n board-service
+
+# Check ingress controller
+kubectl get pods -n ingress-nginx
+```
+
+**Common causes:**
+- Ingress controller not running
+- Minikube tunnel not started
+- Hosts file not updated
+
+### **Debug Commands:**
+
+```bash
+# Get detailed resource information
+kubectl describe <resource-type> <resource-name> -n board-service
+
+# View resource events
+kubectl get events -n board-service --sort-by='.lastTimestamp'
+
+# Check resource YAML
+kubectl get <resource-type> <resource-name> -n board-service -o yaml
+
+# Port forward for direct access
+kubectl port-forward service/<service-name> <local-port>:<service-port> -n board-service
+```

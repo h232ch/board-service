@@ -8,6 +8,7 @@ resources:
 - configmap.yaml
 - secret.yaml
 - persistent-volume-claims.yaml
+- vector-sidecar-config.yaml  # ← Add this line
 - backend-deployment.yaml
 - backend-service.yaml
 - frontend-deployment.yaml

@@ -58,7 +58,51 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "200m"
+      
+      - name: vector-sidecar
+        image: timberio/vector:0.35.0-alpine
+        ports:
+        - containerPort: 8686
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTAINER_NAME
+          value: "vector-sidecar"
+        volumeMounts:
+        - name: backend-logs
+          mountPath: /var/log/app/board-service/nodejs
+        - name: vector-config
+          mountPath: /etc/vector
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8686
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8686
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      
       volumes:
       - name: backend-logs
         persistentVolumeClaim:
           claimName: backend-logs-pvc
+      - name: vector-config
+        configMap:
+          name: vector-sidecar-config
