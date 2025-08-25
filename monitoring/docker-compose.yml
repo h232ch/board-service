@@ -40,6 +40,12 @@ services:
       - GF_SECURITY_CONTENT_SECURITY_POLICY=false
       - GF_USERS_VIEWERS_CAN_EDIT=true
       - GF_USERS_VIEWERS_CAN_MAKE_EDITS=true
+      # Additional CORS settings
+      - GF_SECURITY_CORS_ENABLED=true
+      - GF_SECURITY_CORS_ALLOW_CREDENTIALS=true
+      - GF_SECURITY_CORS_ALLOWED_ORIGINS=*
+      - GF_SECURITY_CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
+      - GF_SECURITY_CORS_ALLOWED_HEADERS=*
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
