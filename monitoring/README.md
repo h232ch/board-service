@@ -254,6 +254,15 @@ curl http://localhost:3000
   docker compose restart grafana
   ```
 
+### **Chrome Browser Issues**
+- Chrome has stricter cookie policies than other browsers
+- **Solution**: Use the configured `cookie_samesite = none` setting
+- **If still having issues in Chrome**:
+  1. Clear Chrome cache: `Ctrl+Shift+Delete` → Clear browsing data
+  2. Disable Chrome extensions temporarily
+  3. Try incognito mode: `Ctrl+Shift+N`
+  4. Or use Firefox/Safari for testing
+
 ### **Login/Authentication Issues**
 - If you get "Unauthorized" after password change:
   ```bash
@@ -266,6 +275,18 @@ curl http://localhost:3000
   docker compose up -d grafana
   ```
 - Default credentials: **admin/admin**
+
+### **Password Change Warning**
+- If you see "Continuing to use the default password exposes you to security risks":
+  - **Option 1**: Ignore the warning (safe for local development)
+  - **Option 2**: Reset password via CLI (recommended):
+    ```bash
+    docker compose exec grafana grafana-cli admin reset-admin-password admin
+    ```
+  - **Option 3**: Use a strong password via CLI:
+    ```bash
+    docker compose exec grafana grafana-cli admin reset-admin-password YourStrongPassword123!
+    ```
 
 ## 🎨 Dashboard Examples
 

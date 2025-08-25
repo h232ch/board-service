@@ -517,4 +517,4 @@ Docker Compose를 사용하면:
 - ✅ **로그 통합**으로 모니터링 용이
 - ✅ **확장성**으로 새로운 서비스 추가 용이
 
-`docker compose up -d` 한 번의 명령으로 전체 Board Service를 실행할 수 있습니다! 
+`docker compose up -d` 한 번의 명령으로 전체 Board Service를 실행할 수 있습니다! kubectl get all -n board-service

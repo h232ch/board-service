@@ -46,6 +46,11 @@ services:
       - GF_SECURITY_CORS_ALLOWED_ORIGINS=*
       - GF_SECURITY_CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
       - GF_SECURITY_CORS_ALLOWED_HEADERS=*
+      # Chrome compatibility settings
+      - GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION=false
+      - GF_USERS_ALLOW_ORG_CREATE=false
+      - GF_AUTH_DISABLE_SIGNOUT_MENU=false
+      - GF_USERS_DEFAULT_THEME=light
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
