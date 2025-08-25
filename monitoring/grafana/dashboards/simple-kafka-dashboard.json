@@ -1,0 +1,61 @@
+{
+  "id": null,
+  "title": "Simple Kafka Dashboard",
+  "tags": ["kafka"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Kafka Brokers",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "kafka_brokers",
+          "legendFormat": "Brokers"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "title": "Topics",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "count(kafka_topic_partitions)",
+          "legendFormat": "Topics"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0}
+    },
+    {
+      "id": 3,
+      "title": "Total Partitions",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(kafka_topic_partitions)",
+          "legendFormat": "Partitions"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0}
+    },
+    {
+      "id": 4,
+      "title": "System CPU",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "CPU %"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0}
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "5s"
+}

@@ -26,7 +26,7 @@ This directory contains a complete monitoring stack for Kafka using Prometheus a
 
 ### **Start Monitoring Stack**
 ```bash
-cd kafka-monitoring
+cd monitoring
 chmod +x *.sh
 ./start-monitoring.sh
 ```
