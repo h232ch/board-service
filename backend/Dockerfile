@@ -17,6 +17,11 @@ COPY . .
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nodejs -u 1001
 
+# Create log directory with proper permissions
+RUN mkdir -p /var/log/app/board-service/nodejs && \
+    chown -R nodejs:nodejs /var/log/app/board-service/nodejs && \
+    chmod -R 755 /var/log/app/board-service/nodejs
+
 # Change ownership of the app directory
 RUN chown -R nodejs:nodejs /app
 USER nodejs

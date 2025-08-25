@@ -20,6 +20,9 @@ spec:
         image: dnwn7166/board-frontend:latest
         ports:
         - containerPort: 80
+        volumeMounts:
+        - name: nginx-logs
+          mountPath: /var/log/app/board-service/nginx
         livenessProbe:
           httpGet:
             path: /health
@@ -39,3 +42,7 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "100m"
+      volumes:
+      - name: nginx-logs
+        persistentVolumeClaim:
+          claimName: nginx-logs-pvc

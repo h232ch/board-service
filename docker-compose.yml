@@ -1,19 +1,23 @@
 services:
-  backend:
+  board-backend-service:
     image: dnwn7166/board-backend:latest
     ports:
       - "8080:8080"
     env_file:
       - ./backend/.env
+    volumes:
+      - /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs
     networks:
       - app-network
 
-  frontend:
+  board-frontend-service:
     image: dnwn7166/board-frontend:latest
     ports:
       - "80:80"
+    volumes:
+      - /var/log/app/board-service/nginx:/var/log/app/board-service/nginx
     depends_on:
-      - backend
+      - board-backend-service
     networks:
       - app-network
 

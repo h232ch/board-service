@@ -19,6 +19,11 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
+# Create logs directory with proper permissions
+RUN mkdir -p /var/log/app/board-service/nginx && \
+    chown -R nginx:nginx /var/log/app/board-service/nginx && \
+    chmod -R 755 /var/log/app/board-service/nginx
+
 # Copy built files from build stage
 COPY --from=build /app/build /usr/share/nginx/html
 

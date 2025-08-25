@@ -20,6 +20,9 @@ spec:
         image: dnwn7166/board-backend:latest
         ports:
         - containerPort: 8080
+        volumeMounts:
+        - name: backend-logs
+          mountPath: /var/log/app/board-service/nodejs
         env:
         - name: NODE_ENV
           valueFrom:
@@ -55,3 +58,7 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "200m"
+      volumes:
+      - name: backend-logs
+        persistentVolumeClaim:
+          claimName: backend-logs-pvc

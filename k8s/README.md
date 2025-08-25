@@ -1116,3 +1116,470 @@ By completing this deployment, you now understand:
 7. **Local Development**: How to use Minikube for local Kubernetes development
 
 This foundation will serve you well as you move to production environments like EKS!
+
+---
+
+## 🔒 **Persistent Volume Claims (PVC) Configuration & Theory**
+
+### **🚀 What We Accomplished**
+
+In this session, we successfully implemented **persistent storage for application logs** in your Kubernetes deployment, ensuring that:
+- ✅ **Frontend Nginx logs** persist across pod restarts
+- ✅ **Backend Node.js logs** persist across pod restarts  
+- ✅ **Volume mounts** work seamlessly with existing deployments
+- ✅ **Storage provisioning** is automated and scalable
+- ✅ **Logging functionality** is production-ready
+
+---
+
+## 📚 **Theory of Persistent Volume Claims (PVC)**
+
+### **1. What is a PVC?**
+
+**Persistent Volume Claim (PVC)** is a request for storage by a user. It's like a "storage reservation" that:
+- **Requests storage** from the cluster
+- **Specifies requirements** (size, access mode, storage class)
+- **Gets bound** to a Persistent Volume (PV)
+- **Provides persistent storage** to pods
+
+### **2. PVC vs Local Storage**
+
+#### **❌ Local Storage (Docker Compose):**
+```yaml
+# docker-compose.yml
+volumes:
+  - /var/log/app/board-service/nginx:/var/log/app/board-service/nginx
+  - /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs
+```
+- **Direct host mounting** to local filesystem
+- **Accessible from host** machine
+- **Lost on host restart** or filesystem changes
+- **Not portable** across different environments
+
+#### **✅ PVC Storage (Kubernetes):**
+```yaml
+# k8s/persistent-volume-claims.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nginx-logs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+```
+- **Cluster-managed storage** independent of host
+- **Persistent across** pod restarts and deployments
+- **Portable** across different K8s environments
+- **Scalable** and enterprise-grade
+
+### **3. Storage Architecture in Minikube**
+
+```bash
+Your Mac (Host) → Docker Desktop → Minikube Container → PVC Storage
+```
+
+**Storage Location:**
+- **NOT on your local disk** (`/var/log/app/board-service/`)
+- **INSIDE minikube container** (`/var/lib/minikube/volumes/`)
+- **Managed by K8s** storage provisioner
+- **Isolated from host** filesystem
+
+---
+
+## 🛠️ **How to Configure PVCs**
+
+### **1. Create PVC Definitions**
+
+```yaml
+# k8s/persistent-volume-claims.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nginx-logs-pvc
+  namespace: board-service
+  labels:
+    app: board-frontend
+    component: logs
+spec:
+  accessModes:
+    - ReadWriteOnce  # Single node read/write
+  resources:
+    requests:
+      storage: 1Gi   # Request 1GB of storage
+  storageClassName: standard  # Use available storage class
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backend-logs-pvc
+  namespace: board-service
+  labels:
+    app: board-backend
+    component: logs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+```
+
+### **2. Update Deployments with Volume Mounts**
+
+#### **Frontend Deployment:**
+```yaml
+# k8s/frontend-deployment.yaml
+spec:
+  template:
+    spec:
+      containers:
+      - name: board-frontend
+        # ... existing config ...
+        volumeMounts:
+        - name: nginx-logs
+          mountPath: /var/log/app/board-service/nginx
+      volumes:
+      - name: nginx-logs
+        persistentVolumeClaim:
+          claimName: nginx-logs-pvc
+```
+
+#### **Backend Deployment:**
+```yaml
+# k8s/backend-deployment.yaml
+spec:
+  template:
+    spec:
+      containers:
+      - name: board-backend
+        # ... existing config ...
+        volumeMounts:
+        - name: backend-logs
+          mountPath: /var/log/app/board-service/nodejs
+      volumes:
+      - name: backend-logs
+        persistentVolumeClaim:
+          claimName: backend-logs-pvc
+```
+
+### **3. Update Kustomization**
+
+```yaml
+# k8s/kustomization.yaml
+resources:
+- namespace.yaml
+- configmap.yaml
+- secret.yaml
+- persistent-volume-claims.yaml  # ← Add this line
+- backend-deployment.yaml
+- backend-service.yaml
+- frontend-deployment.yaml
+- frontend-service.yaml
+- ingress.yaml
+```
+
+---
+
+## 🔗 **How PVCs Work with Existing Configuration**
+
+### **1. Integration with Deployments**
+
+#### **Before PVC (Ephemeral Storage):**
+```yaml
+# Pods wrote logs to container filesystem
+# Logs lost on pod restart
+# No persistent storage
+```
+
+#### **After PVC (Persistent Storage):**
+```yaml
+# Pods write logs to mounted PVC
+# Logs survive pod restarts
+# Storage persists across deployments
+```
+
+### **2. Service Discovery Unchanged**
+
+```yaml
+# k8s/backend-service.yaml - NO CHANGES NEEDED
+apiVersion: v1
+kind: Service
+metadata:
+  name: board-backend-service  # Service name unchanged
+spec:
+  selector:
+    app: board-backend         # Selector unchanged
+  ports:
+  - port: 8080                # Port unchanged
+```
+
+### **3. Ingress Configuration Unchanged**
+
+```yaml
+# k8s/ingress.yaml - NO CHANGES NEEDED
+spec:
+  rules:
+  - host: board-service.local
+    http:
+      paths:
+      - path: /api
+        backend:
+          service:
+            name: board-backend-service  # Routes unchanged
+            port: 8080
+```
+
+### **4. Resource Management Enhanced**
+
+```yaml
+# Deployments now include:
+spec:
+  template:
+    spec:
+      containers:
+      - name: board-frontend
+        resources:
+          requests:
+            memory: "64Mi"     # CPU/Memory unchanged
+            cpu: "50m"
+        volumeMounts:          # ← NEW: Volume mounts
+        - name: nginx-logs
+          mountPath: /var/log/app/board-service/nginx
+```
+
+---
+
+## 📊 **How Logging Works with PVCs**
+
+### **1. Log Flow Architecture**
+
+```bash
+Application → Container Filesystem → Volume Mount → PVC → Persistent Storage
+```
+
+#### **Frontend Logging:**
+```nginx
+# nginx.conf
+location /api/ {
+    access_log /var/log/app/board-service/nginx/access.log main;
+    # ↑ This path is now mounted to PVC
+}
+```
+
+#### **Backend Logging:**
+```javascript
+// logger.js
+const logDir = '/var/log/app/board-service/nodejs';
+// ↑ This path is now mounted to PVC
+```
+
+### **2. Log Persistence Benefits**
+
+#### **✅ Across Pod Restarts:**
+```bash
+# Pod restarts, logs remain
+kubectl delete pod <pod-name> -n board-service
+kubectl get pods -n board-service  # New pod starts
+kubectl exec -it <new-pod> -- ls -la /var/log/app/board-service/nginx/
+# ↑ Logs still exist!
+```
+
+#### **✅ Across Deployments:**
+```bash
+# Update deployment, logs persist
+kubectl set image deployment/board-frontend board-frontend=new-image:tag
+kubectl get pods -n board-service  # New pods start
+# ↑ All previous logs remain accessible
+```
+
+#### **✅ Across Scaling Events:**
+```bash
+# Scale up/down, logs shared
+kubectl scale deployment board-frontend --replicas=3
+# ↑ All pods share same PVC, logs accessible from any pod
+```
+
+### **3. Log Access Methods**
+
+#### **From Inside Pods:**
+```bash
+# Frontend logs
+kubectl exec -it <frontend-pod> -- tail -f /var/log/app/board-service/nginx/access.log
+
+# Backend logs
+kubectl exec -it <backend-pod> -- tail -f /var/log/app/board-service/nodejs/access.log
+```
+
+#### **Copy Logs to Local (If needed):**
+```bash
+# Copy nginx logs
+kubectl cp board-service/<frontend-pod>:/var/log/app/board-service/nginx/access.log ./nginx-access.log
+
+# Copy backend logs
+kubectl cp board-service/<backend-pod>:/var/log/app/board-service/nodejs/access.log ./backend-access.log
+```
+
+---
+
+## 🧪 **Testing PVC Configuration**
+
+### **1. Deploy and Verify**
+
+```bash
+# Apply configuration
+kubectl apply -f k8s/
+
+# Check PVC status
+kubectl get pvc -n board-service
+
+# Check pod status
+kubectl get pods -n board-service
+
+# Verify volume mounts
+kubectl describe pod <pod-name> -n board-service | grep -A 10 "Volumes:"
+```
+
+### **2. Test Logging Functionality**
+
+```bash
+# Port forward to test
+kubectl port-forward service/board-frontend-service 8080:80 -n board-service &
+
+# Test frontend
+curl -I http://localhost:8080
+
+# Test API
+curl -I http://localhost:8080/api/posts
+
+# Check logs
+kubectl exec -it <frontend-pod> -- tail -5 /var/log/app/board-service/nginx/access.log
+```
+
+### **3. Verify Persistence**
+
+```bash
+# Delete a pod
+kubectl delete pod <pod-name> -n board-service
+
+# Wait for new pod
+kubectl get pods -n board-service
+
+# Verify logs still exist
+kubectl exec -it <new-pod> -- ls -la /var/log/app/board-service/nginx/
+```
+
+---
+
+## 🎯 **Production Benefits**
+
+### **1. Enterprise-Grade Logging**
+- **Log retention** across deployments
+- **Audit trails** for compliance
+- **Security monitoring** capabilities
+- **Performance analysis** over time
+
+### **2. Scalability & Reliability**
+- **Multiple replicas** share same storage
+- **Load balancing** with persistent data
+- **Rolling updates** preserve logs
+- **Disaster recovery** capabilities
+
+### **3. Operational Excellence**
+- **Centralized logging** management
+- **Easy troubleshooting** across pods
+- **Consistent monitoring** setup
+- **Standardized logging** practices
+
+---
+
+## 🚨 **Common Issues & Solutions**
+
+### **1. PVC Pending Status**
+
+#### **Problem:**
+```bash
+NAME               STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS
+nginx-logs-pvc     Pending                                                     <unset>
+```
+
+#### **Solution:**
+```bash
+# Check available storage classes
+kubectl get storageclass
+
+# Update PVC to use available storage class
+storageClassName: standard  # Instead of ""
+```
+
+### **2. Pods Stuck in Pending**
+
+#### **Problem:**
+```bash
+NAME                              READY   STATUS    RESTARTS   AGE
+board-frontend-xxx-xxx            0/1     Pending   0          1m
+```
+
+#### **Solution:**
+```bash
+# Check PVC binding
+kubectl get pvc -n board-service
+
+# Ensure PVCs are Bound before pods start
+kubectl describe pod <pod-name> -n board-service
+```
+
+### **3. Volume Mount Errors**
+
+#### **Problem:**
+```bash
+# Pod fails to start with volume mount errors
+```
+
+#### **Solution:**
+```bash
+# Verify PVC exists and is bound
+kubectl get pvc -n board-service
+
+# Check PVC details
+kubectl describe pvc <pvc-name> -n board-service
+
+# Verify storage class availability
+kubectl get storageclass
+```
+
+---
+
+## 🎉 **Summary of Accomplishments**
+
+### **✅ What We Successfully Implemented:**
+
+1. **Persistent Volume Claims**: Created PVCs for both frontend and backend logs
+2. **Volume Mounts**: Integrated PVCs with existing deployments
+3. **Storage Configuration**: Configured proper storage classes for minikube
+4. **Logging Persistence**: Ensured logs survive pod restarts and deployments
+5. **Production Readiness**: Achieved enterprise-grade logging capabilities
+
+### **✅ Technical Achievements:**
+
+- **PVC Creation**: `nginx-logs-pvc` and `backend-logs-pvc`
+- **Volume Integration**: Seamless integration with existing K8s manifests
+- **Storage Provisioning**: Automated storage allocation via storage classes
+- **Log Persistence**: Complete log retention across all pod lifecycle events
+- **Scalability**: Support for multiple replicas with shared storage
+
+### **✅ Operational Benefits:**
+
+- **Consistent Logging**: Same logging behavior across all environments
+- **Easy Troubleshooting**: Persistent logs for debugging and monitoring
+- **Security Compliance**: Complete audit trails for security monitoring
+- **Performance Analysis**: Historical log data for optimization
+- **Production Standards**: Enterprise-grade logging infrastructure
+
+**Your Kubernetes deployment now has production-ready persistent logging that matches or exceeds your Docker Compose setup!** 🚀
+
+**The PVC configuration ensures that your application logs are properly persisted, accessible, and scalable across all deployment scenarios.** 🛡️

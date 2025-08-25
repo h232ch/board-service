@@ -1,4 +1,3 @@
-
 # 노드 익스프레스 학습 과정
 
 ## 1단계: 기본 구조 이해
@@ -2191,7 +2190,7 @@ describe('User API Tests', () => {
 
 ## API tests
 
-아래는 “게시판 서비스”에서 자주 사용되는 API 테스트 시나리오 10가지 예시입니다.  
+아래는 "게시판 서비스"에서 자주 사용되는 API 테스트 시나리오 10가지 예시입니다.  
 각 예시는 Postman에서 사용할 수 있도록 요청 방식, URL, Body, 설명을 함께 제공합니다.
 
 ---
@@ -2316,7 +2315,7 @@ describe('User API Tests', () => {
 #### 참고
 - `{JWT_TOKEN}`은 로그인 시 응답으로 받은 토큰을 사용합니다.
 - 실제 API 경로(`/api/posts/1` 등)는 프로젝트 라우팅에 따라 다를 수 있습니다.
-- Postman에서 각 요청을 “컬렉션”으로 저장해두면 반복적으로 테스트하기 편리합니다.
+- Postman에서 각 요청을 "컬렉션"으로 저장해두면 반복적으로 테스트하기 편리합니다.
 
 ## 프로덕션 환경 구성안
 
@@ -2531,3 +2530,732 @@ app.get('/api/users', (req, res) => {
 
 - **`X-Real-IP` 헤더**는 사용자의 실제 IP를 Node.js에 전달
 - **IP 기반 기능**(로그, 접근 제한, 지역 기반 서비스 등)에 필수
+
+---
+
+## 📝 로깅 시스템 가이드
+
+이 섹션에서는 Winston을 사용한 구조화된 로깅 시스템과 로그 파일 관리에 대해 설명합니다.
+
+---
+
+## 🔧 로깅 설정
+
+### **1. Winston 로거 설정**
+```javascript
+// src/config/logger.js
+const winston = require('winston');
+const path = require('path');
+
+const logDir = '/var/log/app/board-service/nodejs';
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({
+      format: 'YYYY-MM-DD HH:mm:ss'
+    }),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
+  ),
+  defaultMeta: { service: 'board-service-backend' },
+  transports: [
+    new winston.transports.File({
+      filename: path.join(logDir, 'error.log'),
+      level: 'error',
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+    }),
+    new winston.transports.File({
+      filename: path.join(logDir, 'combined.log'),
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+    }),
+    new winston.transports.File({
+      filename: path.join(logDir, 'access.log'),
+      level: 'info',
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+    }),
+  ],
+});
+```
+
+### **2. 로그 파일 구조**
+```
+/var/log/app/board-service/nodejs/
+├── access.log      # 정보 레벨 로그 (HTTP 요청, 서버 상태 등)
+├── error.log       # 에러 레벨 로그 (에러, 예외 등)
+├── combined.log    # 모든 레벨 로그 통합
+└── .gitkeep        # Git 추적용 파일
+```
+
+---
+
+## 📊 로그 레벨 및 형식
+
+### **로그 레벨**
+- **error**: 에러 및 예외 상황
+- **warn**: 경고 상황
+- **info**: 일반 정보 (HTTP 요청, 서버 상태 등)
+- **debug**: 디버깅 정보 (개발 환경에서만)
+
+### **로그 형식 예시**
+```json
+{
+  "level": "info",
+  "message": "GET /health",
+  "service": "board-service-backend",
+  "timestamp": "2025-08-25 12:24:04",
+  "method": "GET",
+  "url": "/health",
+  "ip": "127.0.0.1",
+  "userAgent": "curl/8.7.1"
+}
+```
+
+---
+
+## 🚀 로깅 사용법
+
+### **1. 기본 로깅**
+```javascript
+const logger = require('./config/logger');
+
+// 정보 로그
+logger.info('Server started successfully');
+
+// 에러 로그
+logger.error('Database connection failed', { error: err.message });
+
+// 경고 로그
+logger.warn('High memory usage detected', { memory: process.memoryUsage() });
+```
+
+### **2. HTTP 요청 로깅**
+```javascript
+// Morgan을 사용한 HTTP 요청 로깅
+app.use(morgan('combined', { stream: logger.stream }));
+
+// 커스텀 요청 로깅
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.url}`, {
+    method: req.method,
+    url: req.url,
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
+  next();
+});
+```
+
+### **3. 에러 로깅**
+```javascript
+// 에러 처리 미들웨어
+app.use((err, req, res, next) => {
+  logger.error('Unhandled error:', { 
+    error: err.message, 
+    stack: err.stack,
+    method: req.method,
+    url: req.url,
+    ip: req.ip
+  });
+  res.status(500).json({ message: 'Something went wrong!' });
+});
+```
+
+---
+
+## 📁 로그 파일 관리
+
+### **1. 로그 로테이션**
+- **최대 파일 크기**: 5MB
+- **최대 파일 수**: 5개
+- **자동 로테이션**: 크기 기반
+
+### **2. 로그 디렉토리 생성**
+```bash
+# 로그 디렉토리 생성
+sudo mkdir -p /var/log/app/board-service/nodejs
+
+# 권한 설정
+sudo chown -R $(whoami):$(id -gn) /var/log/app/board-service/nodejs
+sudo chmod 777 /var/log/app/board-service/nodejs
+```
+
+### **3. 로그 모니터링**
+```bash
+# 실시간 로그 확인
+tail -f /var/log/app/board-service/nodejs/access.log
+tail -f /var/log/app/board-service/nodejs/error.log
+
+# 로그 라인 수 확인
+wc -l /var/log/app/board-service/nodejs/*.log
+
+# 특정 패턴 검색
+grep "error" /var/log/app/board-service/nodejs/combined.log
+```
+
+---
+
+## 🐳 Docker 로깅
+
+### **1. Docker Compose 설정**
+```yaml
+services:
+  backend:
+    image: dnwn7166/board-backend:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs
+    env_file:
+      - ./backend/.env
+```
+
+### **2. Dockerfile 로그 디렉토리**
+```dockerfile
+# 로그 디렉토리 생성 및 권한 설정
+RUN mkdir -p /var/log/app/board-service/nodejs && \
+    chown -R nodejs:nodejs /var/log/app/board-service/nodejs && \
+    chmod -R 755 /var/log/app/board-service/nodejs
+```
+
+### **3. 컨테이너 로그 확인**
+```bash
+# 컨테이너 로그 확인
+docker logs board-backend
+
+# 실시간 로그 확인
+docker logs -f board-backend
+
+# 호스트 로그 파일 확인
+ls -la /var/log/app/board-service/nodejs/
+```
+
+---
+
+## 🔍 로그 분석 및 모니터링
+
+### **1. 로그 분석 도구**
+```bash
+# HTTP 요청 통계
+grep "GET\|POST\|PUT\|DELETE" /var/log/app/board-service/nodejs/access.log | wc -l
+
+# 에러 발생 빈도
+grep "error" /var/log/app/board-service/nodejs/error.log | wc -l
+
+# 특정 IP 접근 기록
+grep "127.0.0.1" /var/log/app/board-service/nodejs/access.log
+```
+
+### **2. 로그 백업**
+```bash
+# 로그 백업
+cp -r /var/log/app/board-service/nodejs /backup/nodejs-logs-$(date +%Y%m%d)
+
+# 로그 압축
+tar -czf /backup/nodejs-logs-$(date +%Y%m%d).tar.gz /var/log/app/board-service/nodejs/
+```
+
+---
+
+## 🎯 로깅 모범 사례
+
+### **1. 로그 메시지 작성**
+- **명확하고 구체적**: "Database connection failed" vs "Error occurred"
+- **컨텍스트 포함**: 요청 정보, 사용자 ID, 세션 ID 등
+- **일관된 형식**: 동일한 패턴의 로그 메시지
+
+### **2. 성능 고려사항**
+- **비동기 로깅**: Winston의 기본 설정
+- **로그 레벨 조정**: 프로덕션에서는 debug 레벨 비활성화
+- **로그 파일 크기 제한**: 디스크 공간 관리
+
+### **3. 보안 고려사항**
+- **민감한 정보 제외**: 비밀번호, 토큰 등
+- **로그 접근 권한**: 적절한 파일 권한 설정
+- **로그 보존 기간**: 필요에 따른 로그 정리
+
+---
+
+## 🏗️ Docker 이미지 관리 가이드
+
+이 섹션에서는 Docker 이미지를 빌드하고, 태그를 생성하고, Docker Hub에 푸시하고, 실행하는 전체 과정을 설명합니다.
+
+---
+
+## 📝 Docker 로깅 설정
+
+### **1. 로그 디렉토리 준비**
+```bash
+# 호스트 시스템에 로그 디렉토리 생성
+sudo mkdir -p /var/log/app/board-service/nodejs
+
+# 권한 설정
+sudo chown -R $(whoami):$(id -gn) /var/log/app/board-service/nodejs
+sudo chmod 777 /var/log/app/board-service/nodejs
+```
+
+### **2. Docker Compose 로깅 설정**
+```yaml
+# docker-compose.yml
+services:
+  backend:
+    image: dnwn7166/board-backend:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs
+    env_file:
+      - ./backend/.env
+```
+
+### **3. Docker Run 로깅 설정**
+```bash
+# 기본 실행 (로깅 포함)
+docker run -d --name board-backend -p 8080:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  your-username/board-backend:latest
+
+# 환경 변수 파일 사용 (로깅 포함)
+docker run -d --name board-backend -p 8080:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  --env-file ./backend/.env \
+  your-username/board-backend:latest
+```
+
+### **4. 로그 파일 확인**
+```bash
+# 실시간 로그 모니터링
+tail -f /var/log/app/board-service/nodejs/access.log
+tail -f /var/log/app/board-service/nodejs/error.log
+tail -f /var/log/app/board-service/nodejs/combined.log
+
+# 로그 통계
+wc -l /var/log/app/board-service/nodejs/*.log
+
+# 특정 패턴 검색
+grep "error" /var/log/app/board-service/nodejs/error.log
+grep "GET\|POST" /var/log/app/board-service/nodejs/access.log
+```
+
+---
+
+## 🔨 1. Docker 이미지 빌드
+
+### **백엔드 이미지 빌드**
+```bash
+# 프로젝트 루트 디렉토리에서 실행
+docker build -t board-backend:latest ./backend
+
+# 또는 backend 디렉토리에서 실행
+cd backend
+docker build -t board-backend:latest .
+```
+
+### **빌드 과정 설명**
+1. **Node.js 18 Alpine** 기본 이미지 사용
+2. **의존성 설치** (`npm ci --only=production`)
+3. **보안 사용자 생성** (`nodejs` 비root 사용자)
+4. **소스 코드 복사** 및 권한 설정
+5. **Health Check** 스크립트 설정
+6. **최종 이미지** 생성
+
+### **빌드 확인**
+```bash
+# 이미지 목록 확인
+docker images | grep board-backend
+
+# 이미지 상세 정보 확인
+docker inspect board-backend:latest
+```
+
+---
+
+## 🏷️ 2. Docker 이미지 태그 생성
+
+### **로컬 이미지에 태그 생성**
+```bash
+# 기본 태그
+docker tag board-backend:latest board-backend:v1.0.0
+
+# Docker Hub 사용자명으로 태그
+docker tag board-backend:latest your-username/board-backend:latest
+docker tag board-backend:latest your-username/board-backend:v1.0.0
+
+# 특정 버전 태그
+docker tag board-backend:latest your-username/board-backend:stable
+```
+
+### **태그 확인**
+```bash
+# 모든 태그 확인
+docker images board-backend
+
+# 특정 이미지의 모든 태그 확인
+docker images your-username/board-backend
+```
+
+### **태그 관리 팁**
+- **latest**: 최신 안정 버전
+- **v1.0.0**: 시맨틱 버전 관리
+- **stable**: 안정 버전
+- **dev**: 개발/테스트 버전
+
+---
+
+## 🚀 3. Docker Hub에 이미지 푸시
+
+### **Docker Hub 로그인**
+```bash
+# Docker Hub 계정으로 로그인
+docker login
+
+# 사용자명과 비밀번호 입력
+Username: your-username
+Password: ********
+```
+
+### **이미지 푸시**
+```bash
+# 최신 버전 푸시
+docker push your-username/board-backend:latest
+
+# 특정 버전 푸시
+docker push your-username/board-backend:v1.0.0
+
+# 모든 태그 푸시
+docker push your-username/board-backend --all-tags
+```
+
+### **푸시 확인**
+```bash
+# Docker Hub에서 이미지 확인
+docker search your-username/board-backend
+
+# 원격 이미지 정보 확인
+docker pull your-username/board-backend:latest
+```
+
+---
+
+## 📥 4. Docker 이미지 풀링 및 실행
+
+### **이미지 풀링**
+```bash
+# 최신 버전 풀링
+docker pull your-username/board-backend:latest
+
+# 특정 버전 풀링
+docker pull your-username/board-backend:v1.0.0
+
+# 이미지 확인
+docker images your-username/board-backend
+```
+
+### **컨테이너 실행**
+
+#### **기본 실행**
+```bash
+# 포트 8080으로 실행 (로깅 포함)
+docker run -d --name board-backend -p 8080:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  your-username/board-backend:latest
+```
+
+#### **환경 변수 파일 사용 (권장)**
+```bash
+# .env 파일 사용 (로깅 포함)
+docker run -d --name board-backend -p 8080:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  --env-file ./backend/.env \
+  your-username/board-backend:latest
+```
+
+#### **환경별 실행**
+```bash
+# 개발 환경 (로깅 포함)
+docker run -d --name board-backend-dev -p 8081:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  -e NODE_ENV=development \
+  -e PORT=8080 \
+  your-username/board-backend:latest
+
+# 프로덕션 환경 (로깅 포함)
+docker run -d --name board-backend-prod -p 8080:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  -e NODE_ENV=production \
+  -e PORT=8080 \
+  --env-file ./backend/.env \
+  your-username/board-backend:latest
+```
+
+---
+
+## 🔄 전체 워크플로우 예시
+
+### **1. 개발 → 빌드 → 배포 과정**
+```bash
+# 1. 코드 수정 후 이미지 빌드
+docker build -t board-backend:latest ./backend
+
+# 2. Docker Hub에 태그
+docker tag board-backend:latest your-username/board-backend:latest
+
+# 3. Docker Hub에 푸시
+docker push your-username/board-backend:latest
+
+# 4. 프로덕션 서버에서 풀링
+docker pull your-username/board-backend:latest
+
+# 5. 새 컨테이너 실행 (로깅 포함)
+docker stop board-backend-prod
+docker rm board-backend-prod
+docker run -d --name board-backend-prod -p 8080:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  --env-file ./backend/.env \
+  your-username/board-backend:latest
+```
+
+### **2. 버전 관리 워크플로우**
+```bash
+# 1. 새 버전 빌드
+docker build -t board-backend:v2.0.0 ./backend
+
+# 2. 여러 태그 생성
+docker tag board-backend:v2.0.0 your-username/board-backend:v2.0.0
+docker tag board-backend:v2.0.0 your-username/board-backend:latest
+
+# 3. 모든 태그 푸시
+docker push your-username/board-backend:v2.0.0
+docker push your-username/board-backend:latest
+
+# 4. 롤백 준비 (이전 버전 유지)
+docker tag your-username/board-backend:v1.0.0 your-username/board-backend:stable
+```
+
+---
+
+## 🐛 로깅 관련 문제 해결
+
+### **로그 파일이 생성되지 않는 경우**
+```bash
+# 1. 로그 디렉토리 권한 확인
+ls -la /var/log/app/board-service/nodejs/
+
+# 2. 권한 수정
+sudo chmod 777 /var/log/app/board-service/nodejs
+
+# 3. 소유권 확인 및 수정
+sudo chown -R $(whoami):$(id -gn) /var/log/app/board-service/nodejs
+
+# 4. 컨테이너 내부 로그 디렉토리 확인
+docker exec board-backend ls -la /var/log/app/board-service/nodejs/
+```
+
+### **로그 볼륨 마운트 문제**
+```bash
+# 1. 볼륨 마운트 상태 확인
+docker inspect board-backend | grep -A 10 "Mounts"
+
+# 2. 컨테이너 재시작 (볼륨 마운트 포함)
+docker stop board-backend
+docker rm board-backend
+docker run -d --name board-backend -p 8080:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  your-username/board-backend:latest
+
+# 3. Docker Compose 사용 시
+docker compose down
+docker compose up -d
+```
+
+### **로그 파일 크기 문제**
+```bash
+# 1. 로그 파일 크기 확인
+du -h /var/log/app/board-service/nodejs/*.log
+
+# 2. 로그 파일 로테이션 확인
+ls -la /var/log/app/board-service/nodejs/
+
+# 3. 오래된 로그 파일 정리
+find /var/log/app/board-service/nodejs/ -name "*.log" -mtime +30 -delete
+```
+
+---
+
+## 🐛 일반적인 문제 해결
+
+### **빌드 실패**
+```bash
+# 빌드 컨텍스트 확인
+docker build --no-cache -t board-backend:latest ./backend
+
+# 빌드 로그 상세 확인
+docker build --progress=plain -t board-backend:latest ./backend
+```
+
+### **푸시 실패**
+```bash
+# Docker Hub 로그인 상태 확인
+docker login
+
+# 이미지 태그 확인
+docker images your-username/board-backend
+
+# 권한 확인
+docker push your-username/board-backend:latest
+```
+
+### **실행 실패**
+```bash
+# 컨테이너 로그 확인
+docker logs board-backend
+
+# 포트 충돌 확인
+lsof -i :8080
+
+# 다른 포트 사용 (로깅 포함)
+docker run -d --name board-backend -p 8081:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  your-username/board-backend:latest
+```
+
+### **Health Check 실패**
+```bash
+# Health Check 상태 확인
+docker inspect board-backend | grep -A 10 "Health"
+
+# 수동 Health Check
+docker exec board-backend node healthcheck.js
+
+# 환경 변수 확인
+docker exec board-backend env | grep PORT
+```
+
+---
+
+## 📊 이미지 관리 명령어
+
+### **이미지 정리**
+```bash
+# 사용하지 않는 이미지 삭제
+docker image prune
+
+# 모든 사용하지 않는 이미지 삭제
+docker image prune -a
+
+# 특정 이미지 삭제
+docker rmi board-backend:latest
+docker rmi your-username/board-backend:latest
+```
+
+### **디스크 사용량 확인**
+```bash
+# Docker 사용량 확인
+docker system df
+
+# 상세 사용량 확인
+docker system df -v
+```
+
+---
+
+## 🎯 모범 사례
+
+### **태그 전략**
+- **latest**: 항상 최신 안정 버전
+- **vX.Y.Z**: 시맨틱 버전 관리
+- **stable**: 프로덕션 안정 버전
+- **dev**: 개발/테스트 버전
+
+### **보안**
+- **비root 사용자**: `nodejs` 사용자로 실행
+- **최소 권한**: 필요한 파일만 복사
+- **환경 변수**: 민감한 정보는 `.env`로 관리
+- **정기적인 업데이트**: 기본 이미지 보안 패치
+
+### **성능**
+- **Alpine Linux**: 가벼운 기본 이미지
+- **프로덕션 의존성**: devDependencies 제외
+- **Health Check**: 자동 상태 모니터링
+- **레이어 최적화**: 효율적인 빌드 구조
+
+### **로깅**
+- **구조화된 로그**: JSON 형식으로 검색 및 분석 용이
+- **로그 로테이션**: 자동 파일 크기 제한 및 백업
+- **볼륨 마운트**: 호스트 시스템에 로그 영구 저장
+- **로그 레벨**: 환경별 적절한 로그 레벨 설정
+
+---
+
+## 📚 Docker 로깅 명령어 요약
+
+### **기본 실행 (로깅 포함)**
+```bash
+# 단일 컨테이너 실행
+docker run -d --name board-backend -p 8080:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  your-username/board-backend:latest
+
+# 환경 변수 파일 사용
+docker run -d --name board-backend -p 8080:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  --env-file ./backend/.env \
+  your-username/board-backend:latest
+```
+
+### **개발/프로덕션 환경**
+```bash
+# 개발 환경
+docker run -d --name board-backend-dev -p 8081:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  -e NODE_ENV=development \
+  your-username/board-backend:latest
+
+# 프로덕션 환경
+docker run -d --name board-backend-prod -p 8080:8080 \
+  -v /var/log/app/board-service/nodejs:/var/log/app/board-service/nodejs \
+  -e NODE_ENV=production \
+  --env-file ./backend/.env \
+  your-username/board-backend:latest
+```
+
+### **Docker Compose 사용**
+```bash
+# 서비스 시작
+docker compose up -d
+
+# 서비스 재시작
+docker compose restart backend
+
+# 서비스 중지
+docker compose down
+```
+
+### **로그 모니터링**
+```bash
+# 컨테이너 로그
+docker logs -f board-backend
+
+# 호스트 로그 파일
+tail -f /var/log/app/board-service/nodejs/access.log
+tail -f /var/log/app/board-service/nodejs/error.log
+tail -f /var/log/app/board-service/nodejs/combined.log
+```
+
+---
+
+## 🎯 결론
+
+Docker를 사용하여 Node.js 백엔드를 컨테이너화하면:
+
+- ✅ **일관된 환경**: 개발/스테이징/프로덕션 환경 통일
+- ✅ **빠른 배포**: 이미지 기반 배포로 빠른 롤아웃
+- ✅ **확장성**: 컨테이너 오케스트레이션으로 수평 확장
+- ✅ **유지보수성**: 설정 파일 기반으로 쉬운 관리
+- ✅ **보안**: 격리된 환경으로 보안 강화
+- ✅ **로깅**: 구조화된 로깅으로 모니터링 및 디버깅 용이
+
+이 가이드를 따라하면 프로덕션 환경에서 안정적으로 운영할 수 있는 Docker 컨테이너를 구축할 수 있습니다.

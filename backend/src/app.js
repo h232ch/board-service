@@ -1,8 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const morgan = require('morgan');
 require('dotenv').config();
 
+const logger = require('./config/logger');
 const userRoutes = require('./routes/userRoutes');
 const postRoutes = require('./routes/postRoutes');
 
@@ -40,16 +42,24 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Request logging middleware
+// HTTP request logging middleware using Morgan
+app.use(morgan('combined', { stream: logger.stream }));
+
+// Custom request logging middleware
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  logger.info(`${req.method} ${req.url}`, {
+    method: req.method,
+    url: req.url,
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
   next();
 });
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.error('MongoDB Connection Error:', err));
+  .then(() => logger.info('MongoDB Connected'))
+  .catch(err => logger.error('MongoDB Connection Error:', { error: err.message, stack: err.stack }));
 
 // Routes
 app.use('/api/users', userRoutes);
@@ -57,17 +67,25 @@ app.use('/api/posts', postRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
+  logger.info('Health check requested');
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Routes (will be added later)
 app.get('/', (req, res) => {
+  logger.info('Root endpoint accessed');
   res.json({ message: 'Welcome to Board Service API' });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error('Unhandled error:', { 
+    error: err.message, 
+    stack: err.stack,
+    method: req.method,
+    url: req.url,
+    ip: req.ip
+  });
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
@@ -75,6 +93,6 @@ const PORT = process.env.PORT || 8080;
 const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
-  console.log(`Server is running on http://${HOST}:${PORT}`);
-  console.log(`CORS enabled for: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  logger.info(`Server is running on http://${HOST}:${PORT}`);
+  logger.info(`CORS enabled for: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
 }); 

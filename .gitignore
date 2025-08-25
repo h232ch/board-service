@@ -14,6 +14,12 @@ yarn-error.log*
 # Logs
 logs
 *.log
+# Keep frontend logs directory structure but ignore log files
+!frontend/logs/
+frontend/logs/*.log
+# Keep backend logs directory structure but ignore log files
+!/var/log/app/board-service/nodejs/
+/var/log/app/board-service/nodejs/*.log
 
 # Runtime data
 pids
