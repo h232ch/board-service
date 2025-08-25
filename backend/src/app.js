@@ -42,11 +42,19 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// HTTP request logging middleware using Morgan
-app.use(morgan('combined', { stream: logger.stream }));
+// HTTP request logging middleware using Morgan (skip health checks)
+app.use(morgan('combined', { 
+  stream: logger.stream,
+  skip: (req, res) => req.url === '/health'
+}));
 
 // Custom request logging middleware
 app.use((req, res, next) => {
+  // Skip logging for health check requests
+  if (req.url === '/health') {
+    return next();
+  }
+  
   logger.info(`${req.method} ${req.url}`, {
     method: req.method,
     url: req.url,
@@ -67,7 +75,6 @@ app.use('/api/posts', postRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  logger.info('Health check requested');
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
