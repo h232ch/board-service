@@ -69,8 +69,8 @@ fi
 # kubectl wait --for=condition=available --timeout=300s deployment/board-frontend -n board-service
 
 # Wait for Vector daemonset to be ready
-echo "Waiting for Vector daemonset to be ready..."
-kubectl wait --for=condition=available --timeout=300s daemonset/vector -n board-service
+# echo "Waiting for Vector daemonset to be ready..."
+# kubectl wait --for=condition=available --timeout=300s daemonset/vector -n board-service
 
 echo "✅ Deployment complete!"
 echo ""
