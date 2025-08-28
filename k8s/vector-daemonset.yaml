@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vector
+  namespace: board-service
+  labels:
+    app: vector-daemonset
+    component: logging
+spec:
+  selector:
+    matchLabels:
+      app: vector-daemonset
+  template:
+    metadata:
+      labels:
+        app: vector-daemonset
+    spec:
+      containers:
+      - name: vector
+        image: timberio/vector:0.35.0-alpine
+        ports:
+        - containerPort: 8686
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: NAMESPACE
+          value: "board-service"
+        volumeMounts:
+        - name: app-logs
+          mountPath: /var/log/app
+        - name: vector-config
+          mountPath: /etc/vector
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8686
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8686
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      
+      volumes:
+      - name: app-logs
+        hostPath:
+          path: /var/log/app
+          type: DirectoryOrCreate
+      - name: vector-config
+        configMap:
+          name: vector-daemonset-config

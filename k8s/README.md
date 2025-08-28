@@ -657,21 +657,12 @@ rules:
 - host: board-service.local          # ← This is the key!
   http:
     paths:
-    - path: /                        # Frontend
+    - path: /                        # Frontend (handles all routes including /api)
       backend: board-frontend-service
-    - path: /api                     # Backend API
-      backend: board-backend-service
-    - path: /health                  # Backend health
-      backend: board-backend-service
 ```
 
 #### **Routing Examples:**
 ```
-Request: GET http://board-service.local/health
-Host: board-service.local
-Path: /health
-Result: Routes to board-backend-service
-
 Request: GET http://board-service.local/
 Host: board-service.local  
 Path: /
@@ -680,7 +671,12 @@ Result: Routes to board-frontend-service
 Request: GET http://board-service.local/api/users
 Host: board-service.local
 Path: /api/users
-Result: Routes to board-backend-service
+Result: Routes to board-frontend-service → nginx proxies to board-backend-service
+
+Request: GET http://board-service.local/health
+Host: board-service.local
+Path: /health
+Result: Routes to board-frontend-service → nginx serves health page
 ```
 
 ### **Testing Commands Reference:**
@@ -922,9 +918,7 @@ spec:
   - host: yourdomain.com
     http:
       paths:
-      - path: /          → board-frontend-service
-      - path: /api       → board-backend-service
-      - path: /health    → board-backend-service
+      - path: /          → board-frontend-service (handles all routes including /api)
 ```
 
 ## 🚀 **Why Not Direct ALB → App Pods?**
@@ -1586,7 +1580,7 @@ kubectl get storageclass
 
 ---
 
-## 🔍 **Vector Sidecar Logging with Kubernetes**
+## 🔍 **Vector Daemonset Logging with Kubernetes**
 
 ### **1. What is Vector and Configuration**
 
@@ -1606,22 +1600,22 @@ Vector is a high-performance, end-to-end observability data pipeline that enable
 sources:
   nginx_logs:
     type: "file"
-    include: ["/var/log/app/board-service/nginx/*.log"]
+    include: ["/var/log/app/*.log"]
   
   backend_logs:
     type: "file"
-    include: ["/var/log/app/board-service/nodejs/*.log"]
+    include: ["/var/log/app/*.log"]
 
 # Transforms: How data is processed
 transforms:
-  parse_nginx:
+  parse_logs:
     type: "remap"
-    inputs: ["nginx_logs"]
+    inputs: ["nginx_logs", "backend_logs"]
     source: |
       # VRL (Vector Remap Language) for log parsing
-      parsed = parse_nginx_log!(.message, "combined")
-      .timestamp = parsed.timestamp
-      .remote_addr = parsed.remote_addr
+      .component = if exists(.file) && includes(get_env_var!("NODE_NAME"), "frontend") { "nginx" } else { "backend" }
+      .service = "board-service"
+      .timestamp = now()
 
 # Sinks: Where data goes
 sinks:
@@ -1646,9 +1640,8 @@ sinks:
   "url": "/health",
   "ip": "10.244.0.1",
   "kubernetes": {
-    "container_name": "vector-sidecar",
     "namespace": "board-service",
-    "pod_name": "board-backend-dd78b9fdb-mx8mt"
+    "node_name": "minikube"
   },
   "vector_version": "0.35.0"
 }
@@ -1672,15 +1665,15 @@ sinks:
     linger_ms: 100
 ```
 
-### **2. How to Create Vector with K8s Sidecar**
+### **2. How to Create Vector with K8s Daemonset**
 
 #### **Step 1: Create Vector ConfigMap**
 ```yaml
-# k8s/vector-sidecar-config.yaml
+# k8s/vector-daemonset-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vector-sidecar-config
+  name: vector-daemonset-config
   namespace: board-service
 data:
   vector.yaml: |
@@ -1688,71 +1681,78 @@ data:
     sources:
       nginx_logs:
         type: "file"
-        include: ["/var/log/app/board-service/nginx/*.log"]
+        include: ["/var/log/app/*.log"]
 ```
 
-#### **Step 2: Update Deployments with Sidecar**
+#### **Step 2: Create Vector Daemonset**
 ```yaml
-# In frontend-deployment.yaml and backend-deployment.yaml
+# k8s/vector-daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vector
+  namespace: board-service
 spec:
+  selector:
+    matchLabels:
+      app: vector-daemonset
   template:
+    metadata:
+      labels:
+        app: vector-daemonset
     spec:
       containers:
-      # Main application container
-      - name: board-frontend
-        # ... existing config ...
-      
-      # Vector sidecar container
-      - name: vector-sidecar
+      - name: vector
         image: timberio/vector:0.35.0-alpine
         ports:
         - containerPort: 8686
         env:
-        - name: POD_NAME
+        - name: NODE_NAME
           valueFrom:
             fieldRef:
-              fieldPath: metadata.name
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
+              fieldPath: spec.nodeName
         volumeMounts:
-        - name: nginx-logs
-          mountPath: /var/log/app/board-service/nginx
+        - name: app-logs
+          mountPath: /var/log/app
         - name: vector-config
           mountPath: /etc/vector
         resources:
           requests:
-            memory: "64Mi"
-            cpu: "50m"
-          limits:
             memory: "128Mi"
             cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
       
       volumes:
+      - name: app-logs
+        hostPath:
+          path: /var/log/app
+          type: DirectoryOrCreate
       - name: vector-config
         configMap:
-          name: vector-sidecar-config
+          name: vector-daemonset-config
 ```
 
 #### **Step 3: Apply Configuration**
 ```bash
-# Apply Vector ConfigMap
-kubectl apply -f k8s/vector-sidecar-config.yaml
+# Apply Vector ConfigMap and Daemonset
+kubectl apply -f k8s/vector-daemonset-config.yaml
+kubectl apply -f k8s/vector-daemonset.yaml
 
-# Apply updated deployments
+# Apply application deployments
 kubectl apply -f k8s/frontend-deployment.yaml
 kubectl apply -f k8s/backend-deployment.yaml
 
-# Or apply all at once
-kubectl apply -f k8s/
+# Or apply all at once with kustomize
+kubectl apply -k k8s/
 ```
 
 ### **3. How K8s Configuration Relates to Vector Configuration**
 
 #### **The Configuration Flow:**
 ```
-K8s ConfigMap → Volume Mount → Vector Container → Vector Process
+K8s ConfigMap → Volume Mount → Vector Daemonset → Vector Process
      ↓              ↓              ↓              ↓
 vector.yaml → /etc/vector/ → Vector reads → Applies config
 ```
@@ -1761,11 +1761,11 @@ vector.yaml → /etc/vector/ → Vector reads → Applies config
 
 **1. Kubernetes ConfigMap Creation:**
 ```yaml
-# k8s/vector-sidecar-config.yaml
+# k8s/vector-daemonset-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vector-sidecar-config
+  name: vector-daemonset-config
   namespace: board-service
 data:
   vector.yaml: |                    # ← This key becomes the filename
@@ -1776,17 +1776,17 @@ data:
     sources:
       nginx_logs:
         type: "file"
-        include: ["/var/log/app/board-service/nginx/*.log"]
+        include: ["/var/log/app/*.log"]
 ```
 
-**2. Volume Mount in Deployment:**
+**2. Volume Mount in Daemonset:**
 ```yaml
-# In deployment.yaml
+# In vector-daemonset.yaml
 spec:
   template:
     spec:
       containers:
-      - name: vector-sidecar
+      - name: vector
         # ... other config ...
         volumeMounts:
         - name: vector-config          # ← References volume name
@@ -1795,7 +1795,7 @@ spec:
       volumes:
       - name: vector-config           # ← Volume name
         configMap:
-          name: vector-sidecar-config
+          name: vector-daemonset-config
           # No items specified = uses default key "vector.yaml"
 ```
 
@@ -1822,18 +1822,18 @@ api:
 sources:
   nginx_logs:
     type: "file"
-    include: ["/var/log/app/board-service/nginx/*.log"]
-    read_from: "beginning"
-    ignore_older_secs: 86400
+    include: ["/var/log/app/*.log"]
+    read_from: "end"
+    ignore_older_secs: 0
 
 transforms:
-  parse_nginx:
+  parse_logs:
     type: "remap"
-    inputs: ["nginx_logs"]
+    inputs: ["nginx_logs", "backend_logs"]
     source: |
-      parsed = parse_nginx_log!(.message, "combined")
-      .timestamp = parsed.timestamp
-      .remote_addr = parsed.remote_addr
+      .component = if exists(.file) && includes(get_env_var!("NODE_NAME"), "frontend") { "nginx" } else { "backend" }
+      .service = "board-service"
+      .timestamp = now()
 
 sinks:
   json_console:
@@ -1962,25 +1962,25 @@ containers:
 **1. Check What Vector Actually Sees:**
 ```bash
 # Verify the configuration file exists
-kubectl exec <pod-name> -c vector-sidecar -n board-service -- ls -la /etc/vector/
+kubectl exec <pod-name> -n board-service -- ls -la /etc/vector/
 
 # View the actual configuration Vector is using
-kubectl exec <pod-name> -c vector-sidecar -n board-service -- cat /etc/vector/vector.yaml
+kubectl exec <pod-name> -n board-service -- cat /etc/vector/vector.yaml
 
 # Check if Vector can parse the configuration
-kubectl exec <pod-name> -c vector-sidecar -n board-service -- vector validate --config /etc/vector/vector.yaml
+kubectl exec <pod-name> -n board-service -- vector validate --config /etc/vector/vector.yaml
 ```
 
 **2. Debug Configuration Issues:**
 ```bash
 # Check Vector startup logs for configuration errors
-kubectl logs <pod-name> -c vector-sidecar -n board-service | grep -i "config\|error"
+kubectl logs <pod-name> -n board-service | grep -i "config\|error"
 
 # Verify file permissions
-kubectl exec <pod-name> -c vector-sidecar -n board-service -- ls -la /etc/vector/
+kubectl exec <pod-name> -n board-service -- ls -la /etc/vector/
 
 # Test Vector configuration validation
-kubectl exec <pod-name> -c vector-sidecar -n board-service -- vector --config /etc/vector/vector.yaml --dry-run
+kubectl exec <pod-name> -n board-service -- vector --config /etc/vector/vector.yaml --dry-run
 ```
 
 #### **Configuration Hot-Reloading (Advanced):**
@@ -2004,11 +2004,11 @@ volumeMounts:
 **2. Update Configuration Without Pod Restart:**
 ```bash
 # Update ConfigMap
-kubectl apply -f k8s/vector-sidecar-config.yaml
+kubectl apply -f k8s/vector-daemonset-config.yaml
 
 # Vector will automatically reload configuration
 # Check Vector logs for reload confirmation
-kubectl logs <pod-name> -c vector-sidecar -n board-service --tail=10
+kubectl logs <pod-name> -n board-service --tail=10
 ```
 
 #### **Configuration Best Practices:**
@@ -2028,7 +2028,7 @@ data:
   sources/nginx.conf: |             # Modular sources
     nginx_logs:
       type: "file"
-      include: ["/var/log/app/board-service/nginx/*.log"]
+      include: ["/var/log/app/*.log"]
   
   transforms/nginx.conf: |          # Modular transforms
     parse_nginx:
@@ -3219,3 +3219,243 @@ kubectl get <resource-type> <resource-name> -n board-service -o yaml
 # Port forward for direct access
 kubectl port-forward service/<service-name> <local-port>:<service-port> -n board-service
 ```
+
+
+---
+
+## 🚀 **Kubectl Commands Practice Guide**
+
+### **🎯 Essential Commands for Daily Operations**
+
+#### **1. Cluster & Namespace Management:**
+```bash
+# Check cluster status
+kubectl cluster-info
+kubectl get nodes
+
+# Switch to board-service namespace
+kubectl config set-context --current --namespace=board-service
+
+# Or use -n flag with every command
+kubectl get pods -n board-service
+```
+
+#### **2. Resource Status & Monitoring:**
+```bash
+# Get all resources in namespace
+kubectl get all -n board-service
+
+# Get specific resource types
+kubectl get pods -n board-service
+kubectl get services -n board-service
+kubectl get deployments -n board-service
+kubectl get daemonset -n board-service
+kubectl get ingress -n board-service
+kubectl get configmap -n board-service
+kubectl get secrets -n board-service
+
+# Watch resources in real-time
+kubectl get pods -n board-service -w
+kubectl get pods -n board-service --watch
+```
+
+#### **3. Pod Operations:**
+```bash
+# Get pod details
+kubectl describe pod <pod-name> -n board-service
+
+# View pod logs
+kubectl logs <pod-name> -n board-service
+kubectl logs <pod-name> -n board-service --tail=100
+kubectl logs <pod-name> -n board-service -f  # Follow logs
+
+# Execute commands in pod
+kubectl exec <pod-name> -n board-service -- ls -la /var/log/app/
+kubectl exec <pod-name> -n board-service -- cat /etc/vector/vector.yaml
+
+# Interactive shell in pod
+kubectl exec -it <pod-name> -n board-service -- sh
+```
+
+#### **4. Service & Networking:**
+```bash
+# Port forwarding for local access
+kubectl port-forward service/board-backend-service 8080:8080 -n board-service &
+kubectl port-forward service/board-frontend-service 3000:80 -n board-service &
+
+# Check service endpoints
+kubectl get endpoints -n board-service
+kubectl describe service board-backend-service -n board-service
+
+# Test service connectivity
+kubectl run test-curl --image=curlimages/curl --rm -it --restart=Never -- curl board-backend-service:8080/health
+```
+
+#### **5. Deployment & Scaling:**
+```bash
+# Check deployment status
+kubectl get deployments -n board-service
+kubectl describe deployment board-backend -n board-service
+
+# Scale deployments
+kubectl scale deployment board-backend --replicas=3 -n board-service
+kubectl scale deployment board-frontend --replicas=3 -n board-service
+
+# Rollout management
+kubectl rollout status deployment/board-backend -n board-service
+kubectl rollout history deployment/board-backend -n board-service
+kubectl rollout undo deployment/board-backend -n board-service
+```
+
+#### **6. Configuration & Secrets:**
+```bash
+# View ConfigMap contents
+kubectl get configmap vector-daemonset-config -n board-service -o yaml
+kubectl describe configmap vector-daemonset-config -n board-service
+
+# View Secret contents (encoded)
+kubectl get secret board-service-secrets -n board-service -o yaml
+
+# Update ConfigMap
+kubectl apply -f vector-daemonset-config.yaml
+```
+
+#### **7. Logging & Monitoring:**
+```bash
+# Vector daemonset logs
+kubectl logs -l app=vector-daemonset -n board-service
+kubectl logs -f -l app=vector-daemonset -n board-service
+
+# Application logs
+kubectl logs -l app=board-backend -n board-service
+kubectl logs -l app=board-frontend -n board-service
+
+# Check Vector health
+kubectl exec <vector-pod-name> -n board-service -- curl localhost:8686/health
+```
+
+#### **8. Troubleshooting & Debugging:**
+```bash
+# Get detailed resource information
+kubectl describe <resource-type> <resource-name> -n board-service
+
+# View resource events
+kubectl get events -n board-service --sort-by='.lastTimestamp'
+kubectl get events -n board-service --field-selector involvedObject.namespace=board-service
+
+# Check resource YAML
+kubectl get <resource-type> <resource-name> -n board-service -o yaml
+kubectl get <resource-type> <resource-name> -n board-service -o json
+
+# Resource usage
+kubectl top pods -n board-service
+kubectl top nodes
+```
+
+#### **9. Advanced Operations:**
+```bash
+# Label management
+kubectl label pod <pod-name> environment=production -n board-service
+kubectl get pods -l environment=production -n board-service
+
+# Annotations
+kubectl annotate pod <pod-name> description="Production backend pod" -n board-service
+
+# Resource quotas
+kubectl get resourcequota -n board-service
+kubectl describe resourcequota -n board-service
+```
+
+#### **10. Cleanup & Maintenance:**
+```bash
+# Delete specific resources
+kubectl delete pod <pod-name> -n board-service
+kubectl delete deployment <deployment-name> -n board-service
+
+# Force delete (use with caution)
+kubectl delete pod <pod-name> --grace-period=0 --force -n board-service
+
+# Clean up namespace
+kubectl delete namespace board-service
+```
+
+### **🎯 Practice Scenarios:**
+
+#### **Scenario 1: Check System Health**
+```bash
+# 1. Check all resources are running
+kubectl get all -n board-service
+
+# 2. Verify Vector is collecting logs
+kubectl logs -l app=vector-daemonset -n board-service --tail=20
+
+# 3. Test backend health
+kubectl port-forward service/board-backend-service 8080:8080 -n board-service &
+curl http://localhost:8080/health
+```
+
+#### **Scenario 2: Debug a Failing Pod**
+```bash
+# 1. Find failing pods
+kubectl get pods -n board-service | grep -v Running
+
+# 2. Get pod details
+kubectl describe pod <failing-pod-name> -n board-service
+
+# 3. Check pod logs
+kubectl logs <failing-pod-name> -n board-service
+
+# 4. Check events
+kubectl get events -n board-service --sort-by='.lastTimestamp'
+```
+
+#### **Scenario 3: Monitor Logs in Real-time**
+```bash
+# 1. Watch Vector logs
+kubectl logs -f -l app=vector-daemonset -n board-service
+
+# 2. In another terminal, generate traffic
+curl http://localhost:3000/health
+curl http://localhost:8080/health
+
+# 3. Observe logs being processed
+```
+
+#### **Scenario 4: Scale and Monitor**
+```bash
+# 1. Scale backend to 3 replicas
+kubectl scale deployment board-backend --replicas=3 -n board-service
+
+# 2. Watch pods come online
+kubectl get pods -n board-service -w
+
+# 3. Check load distribution
+kubectl get endpoints board-backend-service -n board-service
+```
+
+### **💡 Pro Tips:**
+- **Use aliases**: `alias k='kubectl'` and `alias kns='kubectl -n board-service'`
+- **Context switching**: `kubectl config set-context --current --namespace=board-service`
+- **Resource abbreviations**: `po` for pods, `svc` for services, `deploy` for deployments
+- **Output formatting**: `-o wide`, `-o yaml`, `-o json` for different views
+- **Label selectors**: `-l app=board-backend` for filtering resources
+
+### **🔍 Useful One-liners:**
+```bash
+# Get all pods with their IPs
+kubectl get pods -n board-service -o wide
+
+# Watch resource changes
+kubectl get all -n board-service -w
+
+# Get resource usage
+kubectl top pods -n board-service --sort-by=cpu
+
+# Find pods by label
+kubectl get pods -l app=board-backend -n board-service
+
+# Quick status check
+kubectl get pods,svc,deploy,ds -n board-service
+```
+
+Practice these commands regularly to become proficient with Kubernetes operations! 🚀

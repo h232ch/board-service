@@ -7,8 +7,8 @@ resources:
 - namespace.yaml
 - configmap.yaml
 - secret.yaml
-- persistent-volume-claims.yaml
-- vector-sidecar-config.yaml  # ← Add this line
+- vector-daemonset-config.yaml
+- vector-daemonset.yaml
 - backend-deployment.yaml
 - backend-service.yaml
 - frontend-deployment.yaml

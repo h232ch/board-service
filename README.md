@@ -254,17 +254,17 @@ docker compose down --volumes --remove-orphans
 
 ---
 
-## 🚢 Docker Compose 실행 가이드
+## 🚢 Docker Compose Execution Guide
 
-이 섹션에서는 Docker Compose를 사용하여 Board Service를 실행하는 방법을 설명합니다.
+This section explains how to run the Board Service using Docker Compose.
 
 ---
 
-## 📋 사전 준비
+## 📋 Prerequisites
 
-### **1. 환경 변수 파일 생성**
+### **1. Create Environment Variables File**
 ```bash
-# backend/.env 파일 생성
+# Create backend/.env file
 cat > backend/.env << 'EOF'
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority&appName=ClusterName
 JWT_SECRET=your_super_secret_jwt_key_here_change_this_in_production
@@ -272,59 +272,59 @@ NODE_ENV=production
 EOF
 ```
 
-### **2. 로그 디렉토리 생성**
+### **2. Create Log Directories**
 ```bash
-# 프론트엔드 Nginx 로그 디렉토리 생성
+# Create frontend Nginx log directory
 sudo mkdir -p /var/log/app/board-service/nginx
 sudo chmod 777 /var/log/app/board-service/nginx
 
-# 백엔드 Node.js 로그 디렉토리 생성
+# Create backend Node.js log directory
 sudo mkdir -p /var/log/app/board-service/nodejs
 sudo chmod 777 /var/log/app/board-service/nodejs
 ```
 
 ---
 
-## 🚀 Docker Compose 실행
+## 🚀 Docker Compose Execution
 
-### **1. 전체 서비스 시작**
+### **1. Start All Services**
 ```bash
-# 백그라운드에서 실행
+# Run in background
 docker compose up -d
 
-# 또는 포그라운드에서 실행 (로그 확인용)
+# Or run in foreground (for log viewing)
 docker compose up
 ```
 
-### **2. 서비스 상태 확인**
+### **2. Check Service Status**
 ```bash
-# 실행 중인 서비스 확인
+# Check running services
 docker compose ps
 
-# 서비스 상태 상세 확인
+# Check detailed service status
 docker compose ps --format "table {{.Name}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
 ```
 
-### **3. 로그 확인**
+### **3. View Logs**
 ```bash
-# 모든 서비스 로그
+# All service logs
 docker compose logs
 
-# 특정 서비스 로그
+# Specific service logs
 docker compose logs frontend
 docker compose logs backend
 
-# 실시간 로그 모니터링
+# Real-time log monitoring
 docker compose logs -f
 docker compose logs -f frontend
 docker compose logs -f backend
 
-# 호스트 로그 파일 모니터링
-# 프론트엔드 Nginx 로그
+# Host log file monitoring
+# Frontend Nginx logs
 tail -f /var/log/app/board-service/nginx/access.log
 tail -f /var/log/app/board-service/nginx/error.log
 
-# 백엔드 Node.js 로그
+# Backend Node.js logs
 tail -f /var/log/app/board-service/nodejs/access.log
 tail -f /var/log/app/board-service/nodejs/error.log
 tail -f /var/log/app/board-service/nodejs/combined.log
@@ -332,189 +332,189 @@ tail -f /var/log/app/board-service/nodejs/combined.log
 
 ---
 
-## 🔧 서비스 관리
+## 🔧 Service Management
 
-### **서비스 시작/중지**
+### **Start/Stop Services**
 ```bash
-# 특정 서비스만 시작
+# Start specific service only
 docker compose up -d frontend
 docker compose up -d backend
 
-# 특정 서비스만 중지
+# Stop specific service only
 docker compose stop frontend
 docker compose stop backend
 
-# 모든 서비스 중지
+# Stop all services
 docker compose stop
 ```
 
-### **서비스 재시작**
+### **Restart Services**
 ```bash
-# 특정 서비스 재시작
+# Restart specific service
 docker compose restart frontend
 docker compose restart backend
 
-# 모든 서비스 재시작
+# Restart all services
 docker compose restart
 ```
 
-### **서비스 재빌드**
+### **Rebuild Services**
 ```bash
-# 이미지 재빌드 후 시작
+# Rebuild images and start
 docker compose up -d --build
 
-# 특정 서비스만 재빌드
+# Rebuild specific service only
 docker compose up -d --build frontend
 docker compose up -d --build backend
 ```
 
 ---
 
-## 📊 모니터링 및 디버깅
+## 📊 Monitoring and Debugging
 
-### **컨테이너 상태 확인**
+### **Check Container Status**
 ```bash
-# 컨테이너 상세 정보
+# Container detailed information
 docker compose exec frontend nginx -t
 docker compose exec backend node healthcheck.js
 
-# 컨테이너 내부 접속
+# Access container shell
 docker compose exec frontend sh
 docker compose exec backend sh
 ```
 
-### **리소스 사용량 확인**
+### **Check Resource Usage**
 ```bash
-# 컨테이너 리소스 사용량
+# Container resource usage
 docker stats
 
-# 특정 컨테이너만 확인
+# Check specific containers only
 docker stats board-service-frontend-1 board-service-backend-1
 ```
 
 ---
 
-## 🧹 정리 및 관리
+## 🧹 Cleanup and Management
 
-### **서비스 정리**
+### **Service Cleanup**
 ```bash
-# 서비스 중지 및 컨테이너 제거
+# Stop services and remove containers
 docker compose down
 
-# 볼륨과 네트워크도 함께 제거
+# Remove volumes and networks as well
 docker compose down --volumes --remove-orphans
 
-# 이미지까지 제거
+# Remove images as well
 docker compose down --rmi all
 ```
 
-### **로그 및 데이터 정리**
+### **Log and Data Cleanup**
 ```bash
-# Docker 시스템 정리
+# Docker system cleanup
 docker system prune -f
 
-# 사용하지 않는 이미지 정리
+# Remove unused images
 docker image prune -f
 
-# 사용하지 않는 볼륨 정리
+# Remove unused volumes
 docker volume prune -f
 ```
 
 ---
 
-## 🌍 환경별 실행
+## 🌍 Environment-Specific Execution
 
-### **개발 환경**
+### **Development Environment**
 ```bash
-# 개발용 환경 변수로 실행
+# Run with development environment variables
 NODE_ENV=development docker compose up -d
 ```
 
-### **프로덕션 환경**
+### **Production Environment**
 ```bash
-# 프로덕션용 환경 변수로 실행
+# Run with production environment variables
 NODE_ENV=production docker compose up -d
 ```
 
-### **스테이징 환경**
+### **Staging Environment**
 ```bash
-# 스테이징용 포트로 실행
+# Run with staging ports
 docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
 ```
 
 ---
 
-## 🐛 문제 해결
+## 🐛 Troubleshooting
 
-### **일반적인 문제들**
+### **Common Issues**
 
-#### **1. 포트 충돌**
+#### **1. Port Conflicts**
 ```bash
-# 포트 사용 확인
+# Check port usage
 lsof -i :80
 lsof -i :8080
 
-# 다른 포트 사용
+# Use different ports
 docker compose -p board-service-staging up -d
 ```
 
-#### **2. 권한 문제**
+#### **2. Permission Issues**
 ```bash
-# 로그 디렉토리 권한 확인
+# Check log directory permissions
 ls -la /var/log/app/board-service/nginx/
 
-# 권한 수정
+# Fix permissions
 sudo chmod 777 /var/log/app/board-service/nginx
 ```
 
-#### **3. 네트워크 문제**
+#### **3. Network Issues**
 ```bash
-# 네트워크 확인
+# Check networks
 docker network ls
 docker network inspect board-service_app-network
 
-# 네트워크 재생성
+# Recreate network
 docker compose down
 docker compose up -d
 ```
 
 ---
 
-## 📚 유용한 명령어 모음
+## 📚 Useful Command Collection
 
 ```bash
-# 서비스 시작
+# Start services
 docker compose up -d
 
-# 서비스 중지
+# Stop services
 docker compose down
 
-# 로그 확인
+# View logs
 docker compose logs -f
 
-# 상태 확인
+# Check status
 docker compose ps
 
-# 재시작
+# Restart
 docker compose restart
 
-# 재빌드
+# Rebuild
 docker compose up -d --build
 
-# 정리
+# Cleanup
 docker compose down --volumes --remove-orphans
 ```
 
 ---
 
-## 🎯 결론
+## 🎯 Conclusion
 
-Docker Compose를 사용하면:
+Using Docker Compose provides:
 
-- ✅ **간단한 명령어**로 전체 서비스 관리
-- ✅ **자동 네트워크 구성**으로 서비스 간 통신
-- ✅ **환경 변수 관리**로 설정 분리
-- ✅ **로그 통합**으로 모니터링 용이
-- ✅ **확장성**으로 새로운 서비스 추가 용이
+- ✅ **Simple commands** for managing entire services
+- ✅ **Automatic network configuration** for service communication
+- ✅ **Environment variable management** for configuration separation
+- ✅ **Integrated logging** for easy monitoring
+- ✅ **Scalability** for easy addition of new services
 
-`docker compose up -d` 한 번의 명령으로 전체 Board Service를 실행할 수 있습니다! kubectl get all -n board-service
+You can run the entire Board Service with just one command: `docker compose up -d`!

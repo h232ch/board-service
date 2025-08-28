@@ -11,6 +11,7 @@ spec:
   - host: board-service.local
     http:
       paths:
+      # All routes go through frontend (which handles API proxying)
       - path: /
         pathType: Prefix
         backend:
@@ -18,17 +19,3 @@ spec:
             name: board-frontend-service
             port:
               number: 80
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: board-backend-service
-            port:
-              number: 8080
-      - path: /health
-        pathType: Prefix
-        backend:
-          service:
-            name: board-backend-service
-            port:
-              number: 8080
