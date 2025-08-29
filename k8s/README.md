@@ -2,6 +2,17 @@
 
 This directory contains a complete Kubernetes deployment setup for the Board Service. This guide will walk you through every concept, file, and step to help you understand Kubernetes deeply.
 
+## 🚨 **Important Note: Current Architecture**
+
+**This README has been updated to reflect our current Vector DaemonSet architecture:**
+
+- ✅ **Vector DaemonSet**: Centralized logging with 1 Vector pod per node
+- ✅ **hostPath Storage**: Shared node storage for all application logs
+- ✅ **No PVCs**: We removed Persistent Volume Claims in favor of hostPath
+- ✅ **Simplified Architecture**: All traffic routes through frontend service
+
+**If you see references to PVCs or Vector sidecar, those are outdated sections that will be cleaned up.**
+
 ## 🎯 **What We Accomplished**
 
 ### 1. **Minikube Installation & Setup**
@@ -325,7 +336,6 @@ metadata:
   name: board-service-ingress
   namespace: board-service
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   ingressClassName: nginx
@@ -333,6 +343,7 @@ spec:
   - host: board-service.local
     http:
       paths:
+      # All routes go through frontend (which handles API proxying)
       - path: /
         pathType: Prefix
         backend:
@@ -340,20 +351,6 @@ spec:
             name: board-frontend-service
             port:
               number: 80
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: board-backend-service
-            port:
-              number: 8080
-      - path: /health
-        pathType: Prefix
-        backend:
-          service:
-            name: board-backend-service
-            port:
-              number: 8080
 ```
 
 **What it does:**
@@ -368,9 +365,9 @@ spec:
 - You'll add this to your hosts file for local testing
 
 **Path-based Routing:**
-- `/` → Frontend service (React app)
-- `/api` → Backend service (API endpoints)
-- `/health` → Backend service (health checks)
+- `/` → Frontend service (React app) - handles all routes including `/api` and `/health`
+- Frontend Nginx proxies `/api` requests to backend service
+- Frontend serves `/health` page directly
 
 **Annotations:**
 - `rewrite-target: /` - Rewrites URLs for proper routing
@@ -944,7 +941,7 @@ Kubernetes Reality:
 ### **3. Complex Routing:**
 ```
 Ingress Controller Capabilities:
-├── Path-based routing (/api → backend, / → frontend)
+├── Path-based routing (/ → frontend, which handles /api proxying)
 ├── Host-based routing (api.yourdomain.com vs www.yourdomain.com)
 ├── Header-based routing
 ├── Weight-based routing
@@ -2671,7 +2668,7 @@ kubectl get storageclass
 
 ---
 
-## 🔍 **Vector Sidecar Logging with Kubernetes**
+## 🔍 **Vector DaemonSet Logging with Kubernetes**
 
 ### **1. What is Vector and Configuration**
 
@@ -2731,9 +2728,10 @@ sinks:
   "url": "/health",
   "ip": "10.244.0.1",
   "kubernetes": {
-    "container_name": "vector-sidecar",
+    "container_name": "vector",
     "namespace": "board-service",
-    "pod_name": "board-backend-dd78b9fdb-mx8mt"
+    "pod_name": "vector-abc123",
+    "node_name": "minikube"
   },
   "vector_version": "0.35.0"
 }
@@ -2757,15 +2755,15 @@ sinks:
     linger_ms: 100
 ```
 
-### **2. How to Create Vector with K8s Sidecar**
+### **2. How to Create Vector with K8s DaemonSet**
 
 #### **Step 1: Create Vector ConfigMap**
 ```yaml
-# k8s/vector-sidecar-config.yaml
+# k8s/vector-daemonset-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vector-sidecar-config
+  name: vector-daemonset-config
   namespace: board-service
 data:
   vector.yaml: |
@@ -2776,61 +2774,68 @@ data:
         include: ["/var/log/app/board-service/nginx/*.log"]
 ```
 
-#### **Step 2: Update Deployments with Sidecar**
+#### **Step 2: Create Vector DaemonSet**
 ```yaml
-# In frontend-deployment.yaml and backend-deployment.yaml
+# k8s/vector-daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vector
+  namespace: board-service
 spec:
+  selector:
+    matchLabels:
+      app: vector-daemonset
   template:
+    metadata:
+      labels:
+        app: vector-daemonset
     spec:
       containers:
-      # Main application container
-      - name: board-frontend
-        # ... existing config ...
-      
-      # Vector sidecar container
-      - name: vector-sidecar
+      - name: vector
         image: timberio/vector:0.35.0-alpine
         ports:
         - containerPort: 8686
         env:
-        - name: POD_NAME
+        - name: NODE_NAME
           valueFrom:
             fieldRef:
-              fieldPath: metadata.name
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
+              fieldPath: spec.nodeName
         volumeMounts:
-        - name: nginx-logs
-          mountPath: /var/log/app/board-service/nginx
+        - name: app-logs
+          mountPath: /var/log/app
         - name: vector-config
           mountPath: /etc/vector
         resources:
           requests:
-            memory: "64Mi"
-            cpu: "50m"
-          limits:
             memory: "128Mi"
             cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
       
       volumes:
+      - name: app-logs
+        hostPath:
+          path: /var/log/app
+          type: DirectoryOrCreate
       - name: vector-config
         configMap:
-          name: vector-sidecar-config
+          name: vector-daemonset-config
 ```
 
 #### **Step 3: Apply Configuration**
 ```bash
-# Apply Vector ConfigMap
-kubectl apply -f k8s/vector-sidecar-config.yaml
+# Apply Vector ConfigMap and DaemonSet
+kubectl apply -f k8s/vector-daemonset-config.yaml
+kubectl apply -f k8s/vector-daemonset.yaml
 
-# Apply updated deployments
+# Apply application deployments
 kubectl apply -f k8s/frontend-deployment.yaml
 kubectl apply -f k8s/backend-deployment.yaml
 
-# Or apply all at once
-kubectl apply -f k8s/
+# Or apply all at once with kustomize
+kubectl apply -k k8s/
 ```
 
 ### **3. How K8s Configuration Relates to Vector Configuration**
@@ -2846,11 +2851,11 @@ vector.yaml → /etc/vector/ → Vector reads → Applies config
 
 **1. Kubernetes ConfigMap Creation:**
 ```yaml
-# k8s/vector-sidecar-config.yaml
+# k8s/vector-daemonset-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vector-sidecar-config
+  name: vector-daemonset-config
   namespace: board-service
 data:
   vector.yaml: |                    # ← This key becomes the filename
@@ -2880,7 +2885,7 @@ spec:
       volumes:
       - name: vector-config           # ← Volume name
         configMap:
-          name: vector-sidecar-config
+          name: vector-daemonset-config
           # No items specified = uses default key "vector.yaml"
 ```
 
@@ -3047,25 +3052,25 @@ containers:
 **1. Check What Vector Actually Sees:**
 ```bash
 # Verify the configuration file exists
-kubectl exec <pod-name> -c vector-sidecar -n board-service -- ls -la /etc/vector/
+kubectl exec <pod-name> -n board-service -- ls -la /etc/vector/
 
 # View the actual configuration Vector is using
-kubectl exec <pod-name> -c vector-sidecar -n board-service -- cat /etc/vector/vector.yaml
+kubectl exec <pod-name> -n board-service -- cat /etc/vector/vector.yaml
 
 # Check if Vector can parse the configuration
-kubectl exec <pod-name> -c vector-sidecar -n board-service -- vector validate --config /etc/vector/vector.yaml
+kubectl exec <pod-name> -n board-service -- vector validate --config /etc/vector/vector.yaml
 ```
 
 **2. Debug Configuration Issues:**
 ```bash
 # Check Vector startup logs for configuration errors
-kubectl logs <pod-name> -c vector-sidecar -n board-service | grep -i "config\|error"
+kubectl logs <pod-name> -n board-service | grep -i "config\|error"
 
 # Verify file permissions
-kubectl exec <pod-name> -c vector-sidecar -n board-service -- ls -la /etc/vector/
+kubectl exec <pod-name> -n board-service -- ls -la /etc/vector/
 
 # Test Vector configuration validation
-kubectl exec <pod-name> -c vector-sidecar -n board-service -- vector --config /etc/vector/vector.yaml --dry-run
+kubectl exec <pod-name> -n board-service -- vector --config /etc/vector/vector.yaml --dry-run
 ```
 
 #### **Configuration Hot-Reloading (Advanced):**
@@ -3089,11 +3094,11 @@ volumeMounts:
 **2. Update Configuration Without Pod Restart:**
 ```bash
 # Update ConfigMap
-kubectl apply -f k8s/vector-sidecar-config.yaml
+kubectl apply -f k8s/vector-daemonset-config.yaml
 
 # Vector will automatically reload configuration
 # Check Vector logs for reload confirmation
-kubectl logs <pod-name> -c vector-sidecar -n board-service --tail=10
+kubectl logs <pod-name> -n board-service --tail=10
 ```
 
 #### **Configuration Best Practices:**
