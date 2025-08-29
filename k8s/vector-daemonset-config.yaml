@@ -17,7 +17,7 @@ data:
         type: "file"
         include:
           - "/var/log/app/board-service/nginx/*.log"
-        read_from: "beginning"  # Read from beginning of file to process existing logs
+        read_from: "end"  # Read from beginning of file to process existing logs
         ignore_older_secs: 0  # Don't ignore any logs
         ignore_checkpoints: false  # Use checkpoints for resume capability
       
@@ -25,7 +25,7 @@ data:
         type: "file"
         include:
           - "/var/log/app/board-service/nodejs/access.log"
-        read_from: "beginning"  # Read from beginning of file to process existing logs
+        read_from: "end"  # Read from beginning of file to process existing logs
         ignore_older_secs: 0  # Don't ignore any logs
         ignore_checkpoints: false  # Use checkpoints for resume capability
     
