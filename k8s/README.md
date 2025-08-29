@@ -3223,6 +3223,234 @@ kubectl port-forward service/<service-name> <local-port>:<service-port> -n board
 
 ---
 
+## **🔧 Vector DaemonSet Management Guide**
+
+### **📋 Understanding Vector DaemonSet Architecture**
+
+The Vector daemonset provides centralized logging for the board-service environment:
+
+#### **🏗️ Architecture Overview:**
+```
+Node Storage: /var/log/app/
+├── board-service/
+│   ├── nginx/          ← Frontend logs (access.log, error.log)
+│   └── nodejs/         ← Backend logs (access.log, combined.log)
+                                    ↓
+                            Vector DaemonSet (1 per node)
+                                    ↓
+                            Log Processing & Enrichment
+                                    ↓
+                            Console Output (JSON format)
+```
+
+#### **🔄 How It Works:**
+1. **Applications write logs** to shared node storage (`/var/log/app`)
+2. **Vector automatically discovers** and processes these logs
+3. **Logs are enriched** with metadata (component, service, timestamp, etc.)
+4. **Output is standardized** in JSON format for easy consumption
+5. **Real-time processing** with minimal latency
+
+### **📋 Vector DaemonSet Commands:**
+
+#### **1. DaemonSet Management:**
+```bash
+# View Vector daemonset
+kubectl get daemonset vector -n board-service
+kubectl describe daemonset vector -n board-service
+
+# Check Vector pods (should be 1 per node)
+kubectl get pods -l app=vector-daemonset -n board-service
+kubectl get pods -l app=vector-daemonset,component=logging -n board-service
+
+# Get Vector pod details
+kubectl describe pod $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service
+```
+
+#### **2. Vector Configuration:**
+```bash
+# View Vector configuration
+kubectl get configmap vector-daemonset-config -n board-service -o yaml
+kubectl describe configmap vector-daemonset-config -n board-service
+
+# Update Vector configuration
+kubectl apply -f vector-daemonset-config.yaml
+
+# Check Vector configuration validation
+kubectl exec $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service -- vector validate --config /etc/vector/vector.yaml
+```
+
+#### **3. Vector Logs & Monitoring:**
+```bash
+# View Vector logs
+kubectl logs -l app=vector-daemonset -n board-service
+kubectl logs -f -l app=vector-daemonset -n board-service
+
+# View specific Vector pod logs
+kubectl logs $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service
+
+# Check Vector health endpoint
+kubectl port-forward $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') 8686:8686 -n board-service &
+curl http://localhost:8686/health
+
+# Check Vector API
+curl http://localhost:8686/api/v1/health
+```
+
+#### **4. Restart Vector DaemonSet:**
+```bash
+# Restart all Vector pods (recommended)
+kubectl delete pods -l app=vector-daemonset -n board-service
+
+# Force restart
+kubectl delete pods -l app=vector-daemonset -n board-service --force --grace-period=0
+
+# Restart with configuration update
+kubectl apply -f vector-daemonset-config.yaml
+kubectl delete pods -l app=vector-daemonset -n board-service
+
+# Monitor restart
+kubectl get pods -l app=vector-daemonset -n board-service -w
+```
+
+#### **5. Access Node Logs:**
+```bash
+# Access logs through Vector pod
+kubectl exec $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service -- ls -la /var/log/app/board-service/
+
+# View nginx logs
+kubectl exec $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service -- tail -f /var/log/app/board-service/nginx/access.log
+
+# View backend logs
+kubectl exec $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service -- tail -f /var/log/app/board-service/nodejs/access.log
+
+# Interactive shell to explore logs
+kubectl exec -it $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service -- sh
+# Then inside container:
+# ls -la /var/log/app/board-service/
+# tail -f /var/log/app/board-service/nginx/access.log
+```
+
+#### **6. Direct Node Access (Minikube):**
+```bash
+# SSH into minikube node
+minikube ssh
+
+# Navigate to log directory
+cd /var/log/app/
+ls -la
+cd board-service/
+ls -la
+
+# View logs directly
+tail -f nginx/access.log
+tail -f nodejs/access.log
+
+# Check disk usage
+du -sh /var/log/app/board-service/
+
+# Exit minikube
+exit
+```
+
+#### **7. Copy Logs to Local Machine:**
+```bash
+# Copy nginx logs
+kubectl cp board-service/$(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}'):/var/log/app/board-service/nginx/access.log ./nginx-access.log
+
+# Copy backend logs
+kubectl cp board-service/$(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}'):/var/log/app/board-service/nodejs/access.log ./backend-access.log
+
+# Copy entire log directory
+kubectl cp board-service/$(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}'):/var/log/app/ ./logs-from-node/
+```
+
+#### **8. Vector Troubleshooting:**
+```bash
+# Check Vector pod status
+kubectl get pods -l app=vector-daemonset -n board-service
+
+# Check Vector pod events
+kubectl describe pod $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service
+
+# Check Vector resource usage
+kubectl top pod $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service
+
+# Check Vector configuration syntax
+kubectl exec $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service -- vector validate --config /etc/vector/vector.yaml
+
+# Check Vector version
+kubectl exec $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service -- vector --version
+```
+
+### **🎯 Vector Practice Scenarios:**
+
+#### **Scenario 1: Monitor Log Flow**
+```bash
+# 1. Start watching Vector logs
+kubectl logs -f -l app=vector-daemonset -n board-service
+
+# 2. In another terminal, generate traffic
+curl http://localhost:3000/
+curl http://localhost:8080/health
+
+# 3. Observe logs being processed in real-time
+```
+
+#### **Scenario 2: Debug Log Collection Issues**
+```bash
+# 1. Check if Vector is running
+kubectl get pods -l app=vector-daemonset -n board-service
+
+# 2. Check Vector logs for errors
+kubectl logs -l app=vector-daemonset -n board-service --tail=50
+
+# 3. Verify log files exist on node
+kubectl exec $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service -- ls -la /var/log/app/board-service/
+
+# 4. Check Vector configuration
+kubectl get configmap vector-daemonset-config -n board-service -o yaml
+```
+
+#### **Scenario 3: Update Vector Configuration**
+```bash
+# 1. Edit vector-daemonset-config.yaml
+# 2. Apply updated configuration
+kubectl apply -f vector-daemonset-config.yaml
+
+# 3. Restart Vector pods
+kubectl delete pods -l app=vector-daemonset -n board-service
+
+# 4. Verify new configuration is working
+kubectl logs -l app=vector-daemonset -n board-service --tail=20
+```
+
+### **💡 Vector Pro Tips:**
+- **Use aliases**: `alias kvector='kubectl -l app=vector-daemonset -n board-service'`
+- **Quick log access**: `kubectl logs -f $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service`
+- **Real-time monitoring**: Always use `-f` flag for live log watching
+- **Configuration validation**: Always validate Vector config before applying
+- **Resource monitoring**: Keep an eye on Vector pod resource usage
+
+### **🔍 Vector One-liners:**
+```bash
+# Quick Vector status
+kubectl get pods -l app=vector-daemonset -n board-service
+
+# Watch Vector logs
+kubectl logs -f -l app=vector-daemonset -n board-service
+
+# Check Vector health
+kubectl exec $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service -- curl -s localhost:8686/health
+
+# Restart Vector
+kubectl delete pods -l app=vector-daemonset -n board-service
+
+# View node logs
+kubectl exec $(kubectl get pods -l app=vector-daemonset -n board-service | head -1 | awk '{print $1}') -n board-service -- ls -la /var/log/app/board-service/
+```
+
+---
+
 ## 🚀 **Kubectl Commands Practice Guide**
 
 ### **🎯 Essential Commands for Daily Operations**
