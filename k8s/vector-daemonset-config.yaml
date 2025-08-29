@@ -17,7 +17,7 @@ data:
         type: "file"
         include:
           - "/var/log/app/board-service/nginx/*.log"
-        read_from: "end"  # Read from beginning of file to process existing logs
+        read_from: "end"  # Read from end of file to process existing logs
         ignore_older_secs: 0  # Don't ignore any logs
         ignore_checkpoints: false  # Use checkpoints for resume capability
       
@@ -25,7 +25,7 @@ data:
         type: "file"
         include:
           - "/var/log/app/board-service/nodejs/access.log"
-        read_from: "end"  # Read from beginning of file to process existing logs
+        read_from: "end"  # Read from end of file to process existing logs
         ignore_older_secs: 0  # Don't ignore any logs
         ignore_checkpoints: false  # Use checkpoints for resume capability
     
@@ -56,7 +56,7 @@ data:
           .vector_version = "0.35.0"
           
           # Extract pod name from file path if possible
-          .pod_name = get_env_var!("NODE_NAME")
+          .node_name = get_env_var!("NODE_NAME")
           .namespace = "board-service"
     
     sinks:
