@@ -94,5 +94,5 @@ const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
   logger.info(`Server is running on http://${HOST}:${PORT}`);
-  logger.info(`CORS enabled for: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  logger.info(`CORS enabled for: ${process.env.FRONTEND_URL || 'http://localhost:80'}`);
 }); 

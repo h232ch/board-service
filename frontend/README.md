@@ -774,18 +774,6 @@ async function handleCreatePost(postData) {
 }
 ```
 
-### await 없는 경우:
-```typescript
-// 비동기적으로 실행되어 순서가 보장되지 않음
-function handleCreatePost(postData) {
-  postService.createPost(postData)  // API 호출
-    .then(data => {
-      setPosts(prevPosts => [data, ...prevPosts]);  // 데이터 설정
-    });
-  navigate('/board');  // API 응답 전에 실행될 수 있음
-}
-```
-
 ### 실제 사용 예시:
 ```typescript
 // 1. 게시글 생성

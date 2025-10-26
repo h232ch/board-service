@@ -20,6 +20,8 @@ spec:
         image: dnwn7166/board-backend:latest
         ports:
         - containerPort: 8080
+        securityContext:
+          runAsUser: 0  # Run as root to have permission to create directories
         volumeMounts:
         - name: app-logs
           mountPath: /var/log/app
